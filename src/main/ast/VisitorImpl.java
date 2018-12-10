@@ -262,6 +262,8 @@ public class VisitorImpl implements Visitor {
             numPassedRounds += 1;
         }
         if(numPassedRounds == 2){ // final round : print ast if no errors found
+            if(hasErrors == false)
+                System.out.println(program.toString());
             ArrayList<ClassDeclaration> allClasses =  getAllClassDeclarations(program);
             for(int i = 0; i < allClasses.size(); i++){
                 allClasses.get(i).accept(this);
@@ -296,8 +298,12 @@ public class VisitorImpl implements Visitor {
    
         methodDeclaration.getName().accept(this); 
 
-        if(hasErrors== false && numPassedRounds == 2)
-            System.out.println(methodDeclaration.getReturnType().toString());
+        ArrayList<VarDeclaration> args = methodDeclaration.getArgs();
+        for(int i = 0 ; i < args.size(); i++)
+            args.get(i).accept(this);
+
+        //if(hasErrors== false && numPassedRounds == 2)
+        //    System.out.println(methodDeclaration.getReturnType().toString());
 
         // accept local variables
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
@@ -318,9 +324,11 @@ public class VisitorImpl implements Visitor {
 
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(varDeclaration.toString());
+
         varDeclaration.getIdentifier().accept(this);
-        if(hasErrors== false && numPassedRounds == 2)
-            System.out.println(varDeclaration.getType().toString());
+
+        //if(hasErrors== false && numPassedRounds == 2)
+        //    System.out.println(varDeclaration.getType().toString());
     }
 
     @Override
@@ -385,8 +393,8 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(NewClass newClass) {
         if(hasErrors== false && numPassedRounds == 2){
-        System.out.println(newClass.toString());
-        System.out.println(newClass.getClassName());
+            System.out.println(newClass.toString());
+            System.out.println(newClass.getClassName());
         }
     }
 
