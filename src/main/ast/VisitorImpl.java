@@ -293,6 +293,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
+
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(methodDeclaration.toString());
    
@@ -315,8 +316,22 @@ public class VisitorImpl implements Visitor {
         for (int i = 0; i < bodyStms.size(); i++){
             bodyStms.get(i).accept(this);
         }
+
         // finally accept return statement
         methodDeclaration.getReturnValue().accept(this);
+
+             /* 
+            if(numPassedRounds == 2){
+                Expression retVal =  methodDeclaration.getReturnValue();
+                Type retType = methodDeclaration.getReturnType();
+                if(retType.toString() != retVal.getType().toString()){
+                    hasErrors = true;
+                    int line = retval.getType();
+                    System.out.println(format("Line:%d:return type must be %s",line, retType.toString()));
+                }
+                
+            }
+        */
     }
 
     @Override
@@ -342,6 +357,8 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(BinaryExpression binaryExpression) {
+
+
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(binaryExpression.toString());
         binaryExpression.getLeft().accept(this);
@@ -459,6 +476,16 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Conditional conditional) {
+        /* 
+            if(numPassedRounds == 2){
+                Expression cond = conditional.getExpression();
+                if(cond.getType().toString() != 'boolean'){
+                    hasErrors = true;
+                    int line = conditional.getLine();
+                    System.out.println(format("Line:%d:condition type must be boolean"));
+                }
+            }
+        */
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(conditional.toString());
 
@@ -471,6 +498,16 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(While loop) {
+             /*
+                if(numPassedRounds == 2){
+                    Expression cond = loop.getCondition();
+                    if(cond.getType().toString() != 'boolean'){
+                        hasErrors = true;
+                        int line = cond.getLine();
+                        System.out.println(format("Line:%d:condition type must be boolean"));
+                    }
+                }
+              */
              if(hasErrors== false && numPassedRounds == 2)
                 System.out.println(loop.toString());
 
@@ -480,6 +517,17 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Write write) {
+        /* if(numPassedRound == 2){
+            Type write_type = write.getArg().getType();
+            if(write_type.toString() != 'int' && write_type.toString() != 'int[]' && write_type.toString() != 'string'){
+                hasErrors = true;
+                int line = write.getLine();
+                System.out.println(format("Line %d:Unsupported type for writeln", line));
+            }
+        }
+
+
+        */
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(write.toString());
 

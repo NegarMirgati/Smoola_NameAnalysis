@@ -78,8 +78,9 @@ grammar Smoola;
                 mainMethodDec.addStatement($stms.multipleStatements.get(i));
 		    }
          }
-         'return' retexp = expression{  
+         tkn = 'return' retexp = expression{  
             mainMethodDec.setReturnValue($retexp.expr);
+            mainMethodDec.setLine($tkn.getLine());
             $main.addMethodDeclaration(mainMethodDec);
             $prog.setMainClass($main);
             }
@@ -163,19 +164,27 @@ grammar Smoola;
         '}' 
     ;
     statementCondition returns [Conditional conditional]:
-        'if' '('exp = expression')' 'then' 
-        cst = statement {Conditional cond = new Conditional($exp.expr, $cst.stm);}
+        'if' tkn = '('exp = expression')' 'then' 
+        cst = statement {
+                            Conditional cond = new Conditional($exp.expr, $cst.stm);
+                            cond.setLine($tkn.getLine());
+
+                        }
         ('else' ast = statement {cond.setAlternativeBody($ast.stm);})?
         {$conditional = cond;}
       
     ;
     statementLoop returns [While wh]:
-        'while' '(' exp = expression ')' st = statement {
+        tkn = 'while' '(' exp = expression ')' st = statement {
             $wh = new While($exp.expr, $st.stm);
+            int line = $tkn.getLine();
+            $wh.setLine(line);
         }
     ;
     statementWrite returns [Write stm_write]:
-        'writeln(' expr = expression ')' ';' {$stm_write = new Write($expr.expr);} 
+        tkn = 'writeln(' expr = expression ')' ';' {$stm_write = new Write($expr.expr); 
+                                                    int line = $tkn.getLine();
+                                                    $stm_write.setLine(line);} 
     ;
     statementAssignment returns [Assign assign]:
         expr = expression ';'
