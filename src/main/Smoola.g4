@@ -52,7 +52,7 @@ grammar Smoola;
                 print("Line:0:No class exists in the program"); 
             else{
                 setIncompleteTypes(prog);
-	            VisitorImpl v = new VisitorImpl();
+	            VisitorImpl v = new VisitorImpl(prog);
                 prog.accept(v);
             }
 
@@ -187,14 +187,16 @@ grammar Smoola;
                                                     $stm_write.setLine(line);} 
     ;
     statementAssignment returns [Assign assign]:
-        expr = expression ';'
+        expr = expression tkn = ';'
         {
             if($expr.lvalue != null && $expr.rvalue != null){
 
                 $assign = new Assign($expr.lvalue, $expr.rvalue);
+                $assign.setLine($tkn.getLine());
             }
             else if($expr.expr != null)
                 $assign = new Assign($expr.expr, null);
+                $assign.setLine($tkn.getLine());
         }
     ;
 
@@ -228,12 +230,17 @@ grammar Smoola;
 	;
 
     expressionOrTemp returns [Expression expr, BinaryOperator bo]:
-		'||'{$bo = BinaryOperator.or;} lvalue = expressionAnd rvalue = expressionOrTemp
-        {   if($rvalue.expr != null)
+		tkn = '||'{$bo = BinaryOperator.or;} lvalue = expressionAnd rvalue = expressionOrTemp
+        {   
+            if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
-            else
-                $expr = $lvalue.expr;
+                $expr.setLine($tkn.getLine());
             }
+            else{
+                $expr = $lvalue.expr;
+                $expr.setLine($tkn.getLine());
+            }
+        }
 	    |
 	;
 
@@ -250,12 +257,16 @@ grammar Smoola;
 	;
 
     expressionAndTemp returns [Expression expr, BinaryOperator bo]:
-		'&&'{$bo = BinaryOperator.and;} expr1 = expressionEq expr2 = expressionAndTemp
+		tkn = '&&'{$bo = BinaryOperator.and;} expr1 = expressionEq expr2 = expressionAndTemp
         {   
-            if($expr2.expr != null)
+            if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
-            else
+                $expr.setLine($tkn.getLine());
+            }
+            else{
                 $expr = $expr1.expr;
+                $expr.setLine($tkn.getLine());
+            }
         }
 	    |
 	;
@@ -272,13 +283,16 @@ grammar Smoola;
 	;
 
     expressionEqTemp returns [Expression expr, BinaryOperator bo]:
-		('=='{$bo = BinaryOperator.eq;} | '<>' {$bo = BinaryOperator.neq;}) 
+		(tkn = '=='{$bo = BinaryOperator.eq;} | tkn = '<>' {$bo = BinaryOperator.neq;}) 
         expr1 = expressionCmp expr2 = expressionEqTemp 
         {   
             if($expr2.expr != null){
-                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);}
+                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn.getLine());
+                }
             else{
                 $expr = $expr1.expr;
+                $expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -296,14 +310,16 @@ grammar Smoola;
 	;
 
     expressionCmpTemp returns [Expression expr, BinaryOperator bo]:
-		('<' {$bo = BinaryOperator.lt;} | '>' {$bo = BinaryOperator.gt;}) 
+		(tkn = '<' {$bo = BinaryOperator.lt;} | tkn = '>' {$bo = BinaryOperator.gt;}) 
         expr1 = expressionAdd expr2 = expressionCmpTemp 
         {
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn.getLine());
             }
             else{
                 $expr = $expr1.expr;
+                $expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -321,13 +337,17 @@ grammar Smoola;
 	;
 
     expressionAddTemp returns [Expression expr, BinaryOperator bo]:
-		('+' { $bo = BinaryOperator.add; } | '-' { $bo = BinaryOperator.sub; } ) 
+		(tkn = '+' { $bo = BinaryOperator.add; } | tkn = '-' { $bo = BinaryOperator.sub; } ) 
         expr1 = expressionMult expr2 =  expressionAddTemp
         {   
-            if($expr2.expr != null)
+            if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
-            else
+                $expr.setLine($tkn.getLine());
+            }
+            else{
                 $expr = $expr1.expr;
+                $expr.setLine($tkn.getLine());
+            }
 
             }
 	    |
@@ -343,7 +363,7 @@ grammar Smoola;
 	;
 
     expressionMultTemp returns [Expression expr, BinaryOperator bo]:
-		('*' {$bo = BinaryOperator.mult;} | '/' {$bo = BinaryOperator.div;} ) 
+		(tkn = '*' {$bo = BinaryOperator.mult;} | tkn2 = '/' {$bo = BinaryOperator.div;} ) 
         expr1 = expressionUnary expr2 = expressionMultTemp
         {   if($expr2.expr != null)
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
@@ -354,8 +374,12 @@ grammar Smoola;
 	;
 
     expressionUnary returns [Expression expr]:
-		 ('!'  exp = expressionUnary) {UnaryOperator uo = UnaryOperator.not; $expr = new UnaryExpression(uo, $exp.expr);}
-         | ('-'  exp1 = expressionUnary) {UnaryOperator uo1 = UnaryOperator.minus; $expr = new UnaryExpression(uo1, $exp1.expr);} 
+		 (tkn = '!'  exp = expressionUnary) {UnaryOperator uo = UnaryOperator.not; 
+                                            $expr = new UnaryExpression(uo, $exp.expr);
+                                            $expr.setLine($tkn.getLine());}
+         | (tkn2 = '-'  exp1 = expressionUnary) {UnaryOperator uo1 = UnaryOperator.minus; 
+                                                $expr = new UnaryExpression(uo1, $exp1.expr);
+                                                $expr.setLine($tkn2.getLine());} 
          |	exp2 = expressionMem {$expr = $exp2.expr;}
 	;
 
