@@ -314,8 +314,8 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Program program) {
         if(numPassedRounds == 0){ // pass 1
-            this.symTable = new SymbolTable();
-            this.symTable.top.push(new SymbolTable());
+            //this.symTable = new SymbolTable();
+            SymbolTable.top.push(new SymbolTable());
             hasErrors = false;
             numPassedRounds += 1;
         }
@@ -329,11 +329,11 @@ public class VisitorImpl implements Visitor {
                 if(parentName != null)
                     addDecsendantsSymTable(classDecs.get(i), this.symTable, this.symTable.top);
                 else
-                    this.symTable.top.push(this.symTable.top); // for this class
+                   SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // for this class
 
                 checkInsideClass(classDecs.get(i), program);
 
-                this.symTable.top.pop(); // class checking finished, pop it
+                SymbolTable.top.pop(); // class checking finished, pop it
                 
             }
             
@@ -356,10 +356,11 @@ public class VisitorImpl implements Visitor {
      public SymbolTable addDecsendantsSymTable(ClassDeclaration cd, SymbolTable sm, SymbolTable progScope){
          if(cd.getParentName() != null){
             ClassDeclaration pcd = findClass(cd.getParentName().getName(), this.program);
-             sm.top.push(addDecsendantsSymTable(pcd, sm.top.top, progScope));
+             sm.top.push(addDecsendantsSymTable(pcd, sm.top.getPreSymbolTable(), progScope));
          }
          else{
-            //sm.top.push(progScope);
+            System.out.println("here");
+            sm.top.push(new SymbolTable(SymbolTable.top));
             ArrayList <VarDeclaration> varDecs = cd.getVarDeclarations();
             for(int i = 0; i < varDecs.size(); i++){
                 
@@ -406,8 +407,9 @@ public class VisitorImpl implements Visitor {
                 }  
   
             } 
+            System.out.println("heresssss");
          }
-
+         
          return sm;
      }
     @Override
