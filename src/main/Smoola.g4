@@ -131,15 +131,21 @@ grammar Smoola;
             VarDeclaration arg2 = new VarDeclaration(vardecid2, $tp.t);
             arg2.setLine(vline2);
             $methodDec.addArg(arg2);
-        })* ')')) ':' 
-        rettype = type '{' { $methodDec.setReturnType($rettype.t); }
+        })* ')')) co=':' 
+        rettype = type '{' {
+         int typeline = $co.getLine(); 
+         $rettype.t.setLine(typeline);
+         $methodDec.setReturnType($rettype.t); }
         (vardec = varDeclaration { $methodDec.addLocalVar($vardec.varDec); })*
         stms = statements {
             for(int i = 0; i < $stms.multipleStatements.size(); i++){
                 $methodDec.addStatement($stms.multipleStatements.get(i));
             }
         }
-        'return' retvalexpr = expression {$methodDec.setReturnValue($retvalexpr.expr);}';' '}'
+        ret='return' retvalexpr = expression {
+        int retline=$ret.getLine();
+        $retvalexpr.expr.setLine(retline);  
+        $methodDec.setReturnValue($retvalexpr.expr);}';' '}'
  
     ;
     statements returns [ArrayList<Statement> multipleStatements]:
@@ -209,8 +215,11 @@ grammar Smoola;
 	;
 
     expressionAssignment returns [Expression lvalue, Expression rvalue, Expression expr]:
-		 expr_lvalue = expressionOr '=' expr_rvalue = expressionAssignment {
+		 expr_lvalue = expressionOr eqaulline = '=' expr_rvalue = expressionAssignment {
+             int equal_line=$eqaulline.getLine();
              $lvalue = $expr_lvalue.expr; $rvalue = $expr_rvalue.expr; 
+             $lvalue.setLine(equal_line);
+             $rvalue.setLine(equal_line);
              BinaryOperator bo = BinaryOperator.assign;
              BinaryExpression be = new BinaryExpression($expr_lvalue.expr, $expr_rvalue.expr, bo);
              $expr = be;

@@ -2,7 +2,7 @@ import ast.VisitorImpl;
 import ast.node.Program;
 import org.antlr.v4.runtime.*;
 import java.io.IOException;
-
+/*
 public class myTest {
     public static void main(String[] args) throws IOException {
         CharStream reader = CharStreams.fromFileName(args[0]);
@@ -14,4 +14,4 @@ public class myTest {
         VisitorImpl v = new VisitorImpl();
         p.accept(v);
     }
-}
+}*/
