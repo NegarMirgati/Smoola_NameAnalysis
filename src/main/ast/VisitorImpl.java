@@ -325,16 +325,12 @@ public class VisitorImpl implements Visitor {
 
                 checkClassNames(classDecs.get(i));
                 Identifier parentName = classDecs.get(i).getParentName();
-            
+                SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // for this class
                 if(parentName != null)
-                    addDecsendantsSymTable(classDecs.get(i), this.symTable, this.symTable.top);
-                else
-                   SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // for this class
+                   addDecsendantsSymTable(findClass(parentName.getName(), this.program));
 
                 checkInsideClass(classDecs.get(i), program);
-
                 SymbolTable.top.pop(); // class checking finished, pop it
-                
             }
             
             numPassedRounds += 1;
@@ -353,14 +349,10 @@ public class VisitorImpl implements Visitor {
             }
         }*/
     }
-     public SymbolTable addDecsendantsSymTable(ClassDeclaration cd, SymbolTable sm, SymbolTable progScope){
-         if(cd.getParentName() != null){
-            ClassDeclaration pcd = findClass(cd.getParentName().getName(), this.program);
-             sm.top.push(addDecsendantsSymTable(pcd, sm.top.getPreSymbolTable(), progScope));
-         }
-         else{
-            System.out.println("here");
-            sm.top.push(new SymbolTable(SymbolTable.top));
+
+     public void addDecsendantsSymTable(ClassDeclaration cd){
+            while(true){
+
             ArrayList <VarDeclaration> varDecs = cd.getVarDeclarations();
             for(int i = 0; i < varDecs.size(); i++){
                 
@@ -368,12 +360,12 @@ public class VisitorImpl implements Visitor {
                 Type type = varDecs.get(i).getType();
                 index_variable += 1;
                 try{
-                    sm.top.put( new SymbolTableVariableItem(name, type, index_variable));
+                    SymbolTable.top.put( new SymbolTableVariableItem(name, type, index_variable));
                     
                 } catch(ItemAlreadyExistsException e){
                     String new_name = name + "Temporary_" + Integer.toString(index_variable);
                     try{
-                        sm.top.put( new SymbolTableVariableItem(new_name, type, index_variable));
+                        SymbolTable.top.put( new SymbolTableVariableItem(new_name, type, index_variable));
             
                         }catch(ItemAlreadyExistsException ee){
                             System.out.println("OOOOOOOOOPPPPPPSSSS");
@@ -392,26 +384,27 @@ public class VisitorImpl implements Visitor {
                 }
 
                 try{
-                    sm.top.put(new SymbolTableMethodItem(methodName,types));
+                    SymbolTable.top.put(new SymbolTableMethodItem(methodName,types));
 
                 }catch(ItemAlreadyExistsException e){
                     String new_name = methodName + "Temporary_" + Integer.toString(number_of_repeated_method);
                     number_of_repeated_method+=1;
                     try{
 
-                       sm.top.put(new SymbolTableMethodItem(new_name, types));
+                        SymbolTable.top.put(new SymbolTableMethodItem(new_name, types));
                     }
                     catch(ItemAlreadyExistsException ee){
                         System.out.println("OOOOOOOOOPSSSSS!");
                     }
                 }  
-  
             } 
-            System.out.println("heresssss");
+            if(cd.getParentName() == null)
+                break;
+            else
+                cd = findClass(cd.getParentName().getName(), this.program);
          }
-         
-         return sm;
      }
+
     @Override
     public void visit(ClassDeclaration classDeclaration) {
         
@@ -540,13 +533,12 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 2)
             System.out.println(newArray.toString());
 
-        if(newArray.Size() <= 0 && numPassedRounds == 2){          
+        if(newArray.Size() <= 0 && numPassedRounds == 1){          
             newArray.setSize(0);
             int line = newArray.getLine();
             System.out.println(String.format("Line:%d:Array length should not be zero or negative", line));
             hasErrors = true;
         }
-   
         newArray.getExpression().accept(this);
     }
 
