@@ -376,7 +376,7 @@ grammar Smoola;
         expr1 = expressionUnary expr2 = expressionMultTemp
         {   
             int mult_line=$tkn.getLine();
-            Sexpr1.expr.setLine(mult_line);
+            $expr1.expr.setLine(mult_line);
             $expr2.expr.setLine(mult_line);
             if($expr2.expr != null)
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
@@ -410,7 +410,7 @@ grammar Smoola;
     expressionMemTemp returns [Expression expr]:
 		ind ='[' index = expression ']' {$expr = $index.expr;
         
-        $index.expr.setLine(($ind.getLine()););
+        $index.expr.setLine(($ind.getLine()));
         }
 	    |
 	;
@@ -439,13 +439,13 @@ grammar Smoola;
      | point='.' methodname = ID  '(' {
                 Identifier id = new Identifier($methodname.text);
                 MethodCall tempm = new MethodCall($instance, id);
-                int p_line=$point.getLine();
-                $methodcall.setLine(p_line);
+                int p_line2=$point.getLine();
+                $methodcall.setLine(p_line2);
             }
             (arg = expression {tempm.addArg($arg.expr);} 
             (co=',' arg = expression {tempm.addArg($arg.expr);
-            int p_line=$co.getLine();
-            $arg.expr.setLine(p_line);})*) ')' 
+            int p_line3=$co.getLine();
+            $arg.expr.setLine(p_line3);})*) ')' 
             temp = expressionMethodsTemp [tempm] {$methodcall = $temp.methodcall;}
 
      | point='.' 'length' {Length new_inst = new Length($instance); } temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;
@@ -481,7 +481,8 @@ grammar Smoola;
         |   new_='new ' name = ID '(' ')' {
             Identifier id = new Identifier($name.text);
             $expr = new NewClass(id);
-            $expr.setLine($new_.getLine());
+            int ne = $new_.getLine();
+            $expr.setLine(ne);
             }
         |   'this' { $expr = new This();}
         |   constval = 'true' {
@@ -496,15 +497,19 @@ grammar Smoola;
             {     
                 Identifier identifier = new Identifier($id.text);
                 $expr = new ArrayCall(identifier, $exp.expr);
-                $expr.setLine($br.getLine(););
+                int br_line = $br.getLine();
+                $expr.setLine(br_line);
             }
         |	pr='(' thisexpr = expression ')' {
                 $lvalue = $thisexpr.lvalue;
-                $lvalue.setLine($pr.getLine(););
+                int lp = $pr.getLine();
+                $lvalue.setLine(lp);
                 $rvalue = $thisexpr.rvalue;
-                $rvalue.setLine($pr.getLine(););
+                int rp = $pr.getLine();
+                $rvalue.setLine(rp);
                 $expr = $thisexpr.expr;
-                $expr.setLine($pr.getLine(););
+                int ex = $pr.getLine();
+                $expr.setLine(ex);
             }
 	;
 
