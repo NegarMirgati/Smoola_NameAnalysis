@@ -36,11 +36,10 @@ public class VisitorImpl implements Visitor {
        "var", "def", "writeln", "true", "false", "length"};
        for(int i=0; i<KeyWords.length;i++){
            if(word== KeyWords[i]){
-            //System.out.print("This word is keyword and you can not get it for identifier");
-            return false; 
+            return true; 
            }
        }   
-      return true;
+      return false;
     }
 
     public VisitorImpl(Program p){
@@ -326,6 +325,8 @@ public class VisitorImpl implements Visitor {
     }
 
     public boolean isSubType(Type t1, Type t2){
+        if(t1.toString().equals("noType"))
+            return true;
         if (t1.toString().equals(t2.toString())){
             return true;
         }
@@ -724,7 +725,7 @@ public class VisitorImpl implements Visitor {
     public void visit(Identifier identifier) {
         int var_line = identifier.getLine();
         if(IsKeyWord(identifier.getName())){
-            System.out.println(String.format("Line:%d: %s  is not valid,It is keyword", var_line, identifier.getName()));
+            System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
             hasErrors = true;
         }
         if(hasErrors== false && numPassedRounds == 3)
