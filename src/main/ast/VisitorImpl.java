@@ -33,7 +33,7 @@ public class VisitorImpl implements Visitor {
     public Boolean IsKeyWord(String word)
     {
       String KeyWords[] = {"return", "class","extends","new", "int", "char", "string", "boolean", "if", "then", "else","while",
-       "var", "def", "writeln", "true", "false", "length"};
+       "var", "def", "writeln", "true", "false", "this"};
        for(int i=0; i<KeyWords.length;i++){
            if(word== KeyWords[i]){
             //System.out.print("This word is keyword and you can not get it for identifier");
