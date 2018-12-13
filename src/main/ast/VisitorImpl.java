@@ -335,6 +335,7 @@ public class VisitorImpl implements Visitor {
                 if(classDecs.get(i).getParentName() != null)
                     checkForParentClassErrors(classDecs.get(i));
                     checkForCyclicClassErrors(classDecs.get(i));
+                    //checkInsideClassPhase3(cd);
             }
             
         }
@@ -346,6 +347,12 @@ public class VisitorImpl implements Visitor {
                 allClasses.get(i).accept(this);
             }
         }*/
+    }
+
+    void checkInsideClassPhase3(ClassDeclaration cd){
+
+
+
     }
 
 
@@ -368,11 +375,11 @@ public class VisitorImpl implements Visitor {
     public void checkForCyclicClassErrors(ClassDeclaration cd){
         ArrayList <String> visitedClasses = new ArrayList<String>();
         visitedClasses.add(cd.getName().getName());
-
+        ClassDeclaration cdInCycle = cd;
         while(true){
-            if(cd.getParentName()== null)
+            if(cdInCycle.getParentName()== null)
                 return;
-            String parentName = cd.getParentName().getName();
+            String parentName = cdInCycle.getParentName().getName();
             if(visitedClasses.contains(parentName)){
                 hasErrors = true;
                 int line = cd.getLine();
@@ -380,8 +387,8 @@ public class VisitorImpl implements Visitor {
                 break;
             }
                 else{
-                    cd = findClass(parentName, this.program);
-                    if(cd == null)
+                    cdInCycle = findClass(parentName, this.program);
+                    if(cdInCycle == null)
                         return;
                 }
         }
@@ -677,6 +684,11 @@ public class VisitorImpl implements Visitor {
 
         if(conditional.getAlternativeBody() != null )
             conditional.getAlternativeBody().accept(this);
+    }
+
+    @Override
+    public void visit(MethodCallInMain methodCallInMain) {
+        //TODO: implement appropriate visit functionality
     }
 
     @Override
