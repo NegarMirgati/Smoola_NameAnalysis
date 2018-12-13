@@ -216,8 +216,9 @@ grammar Smoola;
 
     expressionAssignment returns [Expression lvalue, Expression rvalue, Expression expr]:
 		 expr_lvalue = expressionOr eqaulline = '=' expr_rvalue = expressionAssignment {
-             int equal_line=$eqaulline.getLine();
-             $lvalue = $expr_lvalue.expr; $rvalue = $expr_rvalue.expr; 
+             int equal_line = $eqaulline.getLine();
+             $lvalue = $expr_lvalue.expr; 
+             $rvalue = $expr_rvalue.expr; 
              $lvalue.setLine(equal_line);
              $rvalue.setLine(equal_line);
              BinaryOperator bo = BinaryOperator.assign;
@@ -375,9 +376,9 @@ grammar Smoola;
 		(tkn = '*' {$bo = BinaryOperator.mult;} | tkn2 = '/' {$bo = BinaryOperator.div;} ) 
         expr1 = expressionUnary expr2 = expressionMultTemp
         {   
-            int mult_line=$tkn.getLine();
-            $expr1.expr.setLine(mult_line);
-            $expr2.expr.setLine(mult_line);
+            //int mult_line=$tkn.getLine();
+            //$expr1.expr.setLine(mult_line);
+            //$expr2.expr.setLine(mult_line);
             if($expr2.expr != null)
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
             else
@@ -408,8 +409,8 @@ grammar Smoola;
 	;
 
     expressionMemTemp returns [Expression expr]:
-		ind ='[' index = expression ']' {$expr = $index.expr;
-        
+		ind ='[' index = expression ']' {
+        $expr = $index.expr;
         $index.expr.setLine(($ind.getLine()));
         }
 	    |
@@ -476,11 +477,9 @@ grammar Smoola;
                 newarr.setLine($ln.getLine());
                 $expr = newarr;
             }
-        |   new_='new ' name = ID '(' ')' {
+        |   'new ' name = ID '(' ')' {
             Identifier id = new Identifier($name.text);
             $expr = new NewClass(id);
-            int ne = $new_.getLine();
-            $expr.setLine(ne);
             }
         |   'this' { $expr = new This();}
         |   constval = 'true' {
@@ -491,23 +490,15 @@ grammar Smoola;
                                 $expr = new BooleanValue(false, bt);
                                 }
         |	id = ID {$expr = new Identifier($id.text);}
-        |   id = ID br='[' exp = expression ']' 
+        |   id = ID '[' exp = expression ']' 
             {     
                 Identifier identifier = new Identifier($id.text);
                 $expr = new ArrayCall(identifier, $exp.expr);
-                int br_line = $br.getLine();
-                $expr.setLine(br_line);
             }
-        |	pr='(' thisexpr = expression ')' {
+        |	'(' thisexpr = expression ')' {
                 $lvalue = $thisexpr.lvalue;
-                int lp = $pr.getLine();
-                $lvalue.setLine(lp);
                 $rvalue = $thisexpr.rvalue;
-                int rp = $pr.getLine();
-                $rvalue.setLine(rp);
                 $expr = $thisexpr.expr;
-                int ex = $pr.getLine();
-                $expr.setLine(ex);
             }
 	;
 
