@@ -24,7 +24,21 @@ public class VisitorImpl implements Visitor {
     public int number_of_repeated_method = 0;
     public int index_variable = 0;
     public int index_class = 0;
+    public int index_keyword = 0;
     HashMap <String, HashMap<String, SymbolTableItem>> classSymTables;
+
+    public Boolean IsKeyWord(String word)
+    {
+      String KeyWords[] = {"return", "class","extends","new", "int", "char", "string", "boolean", "if", "then", "else","while",
+       "var", "def", "writeln", "true", "false", "length"};
+       for(int i=0; i<KeyWords.length;i++){
+           if(word== KeyWords[i]){
+            //System.out.print("This word is keyword and you can not get it for identifier");
+            return false; 
+           }
+       }   
+      return true;
+    }
 
     public VisitorImpl(Program p){
         classSymTables = new  HashMap<String, HashMap<String, SymbolTableItem>>();
@@ -60,6 +74,7 @@ public class VisitorImpl implements Visitor {
     public void checkVarOfMethod(VarDeclaration varDeclaration, int parentLine){
         int idx = 0;
         String name = varDeclaration.getIdentifier().getName();
+        
         Type type=varDeclaration.getType();
         idx += 1;
         try {
@@ -82,6 +97,7 @@ public class VisitorImpl implements Visitor {
 
     public void addVarOfMethod(VarDeclaration varDeclaration, int parentLine){
         String name = varDeclaration.getIdentifier().getName();
+        
         Type type = varDeclaration.getType();
         index_variable += 1;
         try {
@@ -193,6 +209,7 @@ public class VisitorImpl implements Visitor {
 
         for(int i = 0; i < variableDecs.size(); i++){
             String varName = variableDecs.get(i).getIdentifier().getName();
+            
             int parentLine = -1;
             if(cd.getParentName() != null)
                 parentLine = getLineOfParentVar(varName, cd.getParentName().getName(), program);
@@ -582,6 +599,11 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier) {
+        int var_line = identifier.getLine();
+        if(IsKeyWord(identifier.getName())){
+            System.out.println(String.format("Line:%d: %s  is not valid,It is keyword", var_line, identifier.getName()));
+            hasErrors = true;
+        }
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
     }
