@@ -432,25 +432,23 @@ grammar Smoola;
                 Identifier id = new Identifier($methodname.text);
                 MethodCall new_inst = new MethodCall($instance, id);
                 int p_line=$point.getLine();
-                $methodcall.setLine(p_line);
             }
-        temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;}
+        temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall; $methodcall.setLine(p_line);}
 
      | point='.' methodname = ID  '(' {
                 Identifier id = new Identifier($methodname.text);
                 MethodCall tempm = new MethodCall($instance, id);
                 int p_line2=$point.getLine();
-                $methodcall.setLine(p_line2);
             }
             (arg = expression {tempm.addArg($arg.expr);} 
             (co=',' arg = expression {tempm.addArg($arg.expr);
             int p_line3=$co.getLine();
             $arg.expr.setLine(p_line3);})*) ')' 
-            temp = expressionMethodsTemp [tempm] {$methodcall = $temp.methodcall;}
+            temp = expressionMethodsTemp [tempm] {$methodcall = $temp.methodcall; $methodcall.setLine(p_line2);}
 
      | point='.' 'length' {Length new_inst = new Length($instance); } temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;
-     int p_line=$point.getLine();
-     $temp.methodcall.setLine(p_line);}
+        int p_line=$point.getLine();
+        $methodcall.setLine(p_line);}
      | {$methodcall = $instance;}
        
         
