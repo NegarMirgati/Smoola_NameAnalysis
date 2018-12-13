@@ -374,7 +374,11 @@ grammar Smoola;
     expressionMultTemp returns [Expression expr, BinaryOperator bo]:
 		(tkn = '*' {$bo = BinaryOperator.mult;} | tkn2 = '/' {$bo = BinaryOperator.div;} ) 
         expr1 = expressionUnary expr2 = expressionMultTemp
-        {   if($expr2.expr != null)
+        {   
+            int mult_line=$tkn.getLine();
+            Sexpr1.expr.setLine(mult_line);
+            $expr2.expr.setLine(mult_line);
+            if($expr2.expr != null)
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
             else
                 $expr = $expr1.expr;
@@ -404,7 +408,10 @@ grammar Smoola;
 	;
 
     expressionMemTemp returns [Expression expr]:
-		'[' index = expression ']' {$expr = $index.expr;}
+		ind ='[' index = expression ']' {$expr = $index.expr;
+        
+        $index.expr.setLine(($ind.getLine()););
+        }
 	    |
 	;
 	expressionMethods returns [Expression expr]: // not sure
@@ -420,22 +427,33 @@ grammar Smoola;
     
 	;
 	expressionMethodsTemp [Expression instance] returns [Expression methodcall]:
-     '.' methodname = ID '(' ')'  {   
+     point='.' methodname = ID '(' ')'  {   
+                
                 Identifier id = new Identifier($methodname.text);
                 MethodCall new_inst = new MethodCall($instance, id);
+                int p_line=$point.getLine();
+                $methodcall.setLine(p_line);
             }
         temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;}
 
-     | '.' methodname = ID  '(' {
+     | point='.' methodname = ID  '(' {
                 Identifier id = new Identifier($methodname.text);
                 MethodCall tempm = new MethodCall($instance, id);
+                int p_line=$point.getLine();
+                $methodcall.setLine(p_line);
             }
             (arg = expression {tempm.addArg($arg.expr);} 
-            (',' arg = expression {tempm.addArg($arg.expr);})*) ')' 
+            (co=',' arg = expression {tempm.addArg($arg.expr);
+            int p_line=$co.getLine();
+            $arg.expr.setLine(p_line);})*) ')' 
             temp = expressionMethodsTemp [tempm] {$methodcall = $temp.methodcall;}
 
-     | '.' 'length' {Length new_inst = new Length($instance); } temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;}
+     | point='.' 'length' {Length new_inst = new Length($instance); } temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;
+     int p_line=$point.getLine();
+     $temp.methodcall.setLine(p_line);}
      | {$methodcall = $instance;}
+       
+        
 	;
 
     expressionOther returns [Expression expr, Expression lvalue, Expression rvalue]:
@@ -460,9 +478,10 @@ grammar Smoola;
                 newarr.setLine($ln.getLine());
                 $expr = newarr;
             }
-        |   'new ' name = ID '(' ')' {
+        |   new_='new ' name = ID '(' ')' {
             Identifier id = new Identifier($name.text);
             $expr = new NewClass(id);
+            $expr.setLine($new_.getLine());
             }
         |   'this' { $expr = new This();}
         |   constval = 'true' {
@@ -473,15 +492,19 @@ grammar Smoola;
                                 $expr = new BooleanValue(false, bt);
                                 }
         |	id = ID {$expr = new Identifier($id.text);}
-        |   id = ID '[' exp = expression ']' 
+        |   id = ID br='[' exp = expression ']' 
             {     
                 Identifier identifier = new Identifier($id.text);
                 $expr = new ArrayCall(identifier, $exp.expr);
+                $expr.setLine($br.getLine(););
             }
-        |	'(' thisexpr = expression ')' {
+        |	pr='(' thisexpr = expression ')' {
                 $lvalue = $thisexpr.lvalue;
+                $lvalue.setLine($pr.getLine(););
                 $rvalue = $thisexpr.rvalue;
+                $rvalue.setLine($pr.getLine(););
                 $expr = $thisexpr.expr;
+                $expr.setLine($pr.getLine(););
             }
 	;
 
