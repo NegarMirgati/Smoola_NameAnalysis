@@ -318,7 +318,7 @@ public class VisitorImpl implements Visitor {
                 Identifier parentName = classDecs.get(i).getParentName();
                 SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // for this class
                 if(parentName != null)
-                   addDecsendantsSymTable(findClass(parentName.getName(), this.program));
+                   addDecsendantsSymTable(classDecs.get(i).getName().getName(), findClass(parentName.getName(), this.program));
 
                 checkInsideClass(classDecs.get(i), program);
                 this.classSymTables.put(classDecs.get(i).getName().getName(), SymbolTable.top);
@@ -326,18 +326,18 @@ public class VisitorImpl implements Visitor {
             }
             numPassedRounds += 1;
             SymbolTable.top.pop();
+
         }
-        /*else if(numPassedRounds == 2 && hasErrors == false){
+        if(numPassedRounds == 2 && hasErrors == false){
             SymbolTable.top.push(new SymbolTable());
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
-
-
-
-
+                if(classDecs.get(i).getParentName() != null)
+                    checkForParentClassErrors(classDecs.get(i));
+                    checkForCyclicClassErrors(classDecs.get(i));
             }
             
-        }*/
+        }
         /*if(numPassedRounds == 3){ // final round : print ast if no errors found
             if(hasErrors == false)
                 System.out.println(program.toString());
@@ -348,15 +348,56 @@ public class VisitorImpl implements Visitor {
         }*/
     }
 
-     public void addDecsendantsSymTable(ClassDeclaration cd){
-        ArrayList <String> visitedClasses = new ArrayList<String> ();
 
+    public void checkForParentClassErrors(ClassDeclaration cd){
+
+        String parentName = cd.getParentName().getName();
+        SymbolTable s = findParentSymbolTable(parentName);
+            if(s == null){
+                int line = cd.getLine();
+                System.out.println(String.format("Line:%d:Parent class does not exists", line));
+                hasErrors = true;
+            }
+    }
+
+    public SymbolTable findParentSymbolTable(String parentName){
+        SymbolTable s = this.classSymTables.get(parentName);
+        return s;
+    }
+
+    public void checkForCyclicClassErrors(ClassDeclaration cd){
+        ArrayList <String> visitedClasses = new ArrayList<String>();
+        visitedClasses.add(cd.getName().getName());
+
+        while(true){
+            if(cd.getParentName()== null)
+                return;
+            String parentName = cd.getParentName().getName();
+            if(visitedClasses.contains(parentName)){
+                hasErrors = true;
+                int line = cd.getLine();
+                System.out.println(String.format("Line:%d:Cyclic declaration of class %s", line, cd.getName().getName()));
+                break;
+            }
+                else{
+                    cd = findClass(parentName, this.program);
+                    if(cd == null)
+                        return;
+                }
+        }
+    }
+
+     public void addDecsendantsSymTable(String initialClassName, ClassDeclaration cd){
+        ArrayList <String> visitedClasses = new ArrayList<String> ();
+        visitedClasses.add(initialClassName);
+        
         while(true){
             if(cd == null)
                 break;
             String className = cd.getName().getName();
-            if(visitedClasses.contains(className))
+            if(visitedClasses.contains(className)){
                 break;
+            }
             else
                 visitedClasses.add(className);
 
