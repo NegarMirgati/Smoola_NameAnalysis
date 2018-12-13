@@ -24,10 +24,10 @@ public class VisitorImpl implements Visitor {
     public int number_of_repeated_method = 0;
     public int index_variable = 0;
     public int index_class = 0;
-    HashMap <String, SymbolTable> classSymTables;
+    HashMap <String, HashMap<String, SymbolTableItem>> classSymTables;
 
     public VisitorImpl(Program p){
-        classSymTables = new  HashMap<String, SymbolTable>();
+        classSymTables = new  HashMap<String, HashMap<String, SymbolTableItem>>();
         this.program = p;
     }
 
@@ -321,7 +321,9 @@ public class VisitorImpl implements Visitor {
                    addDecsendantsSymTable(classDecs.get(i).getName().getName(), findClass(parentName.getName(), this.program));
 
                 checkInsideClass(classDecs.get(i), program);
-                this.classSymTables.put(classDecs.get(i).getName().getName(), SymbolTable.top);
+
+                String className = classDecs.get(i).getName().getName();
+                this.classSymTables.put(className, SymbolTable.top.getItems());
                 SymbolTable.top.pop(); // class checking finished, pop it
             }
             numPassedRounds += 1;
@@ -329,13 +331,14 @@ public class VisitorImpl implements Visitor {
 
         }
         if(numPassedRounds == 2 && hasErrors == false){
-            SymbolTable.top.push(new SymbolTable());
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
+                String className = classDecs.get(i).getName().getName();
+
                 if(classDecs.get(i).getParentName() != null)
                     checkForParentClassErrors(classDecs.get(i));
                     checkForCyclicClassErrors(classDecs.get(i));
-                    //checkInsideClassPhase3(cd);
+                    checkInsideClassPhase3(classDecs.get(i));
             }
             
         }
@@ -349,26 +352,57 @@ public class VisitorImpl implements Visitor {
         }*/
     }
 
-    void checkInsideClassPhase3(ClassDeclaration cd){
+    public void checkInsideClassPhase3(ClassDeclaration cd){
 
+        Identifier parentName = cd.getParentName();
+        SymbolTable.top.push(new SymbolTable(SymbolTable.top));
+        if(parentName != null)
+           addDecsendantsSymTable(cd.getName().getName(), findClass(parentName.getName(), this.program));
+        addAllItemsPhase3(cd);
+        visit(cd);
+        SymbolTable.top.pop();
+    }
 
+    public void addAllItemsPhase3(ClassDeclaration cd){
 
+        ArrayList<VarDeclaration> vards = cd.getVarDeclarations();
+        for(int i = 0 ; i < vards.size(); i++){
+            VarDeclaration varDeclaration = vards.get(i);
+            String name = varDeclaration.getIdentifier().getName();
+            Type type=varDeclaration.getType();
+            try{
+                putGlobalVar(vards.get(i).getIdentifier().getName(), type);
+            }catch(ItemAlreadyExistsException ee){
+                System.out.println("OOOOOOOOOOPPPPSSSS");
+            }
+        }
+
+        ArrayList<MethodDeclaration> mds = cd.getMethodDeclarations();
+        for(int i = 0 ; i < mds.size(); i++){
+            MethodDeclaration md = mds.get(i);
+            String name = md.getName().getName();
+            ArrayList <VarDeclaration> args = md.getArgs();
+            try{
+                put_method(name, args);
+            }catch(ItemAlreadyExistsException ee){
+                System.out.println("OOOOOOOOOOPPPPSSSS");
+            }
+        }
     }
 
 
     public void checkForParentClassErrors(ClassDeclaration cd){
 
         String parentName = cd.getParentName().getName();
-        SymbolTable s = findParentSymbolTable(parentName);
-            if(s == null){
+            if(findParentSymbolTable(parentName) == null){
                 int line = cd.getLine();
                 System.out.println(String.format("Line:%d:Parent class does not exists", line));
                 hasErrors = true;
             }
     }
 
-    public SymbolTable findParentSymbolTable(String parentName){
-        SymbolTable s = this.classSymTables.get(parentName);
+    public HashMap<String, SymbolTableItem> findParentSymbolTable(String parentName){
+        HashMap<String, SymbolTableItem> s = this.classSymTables.get(parentName);
         return s;
     }
 
@@ -463,7 +497,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(ClassDeclaration classDeclaration) {
         
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(classDeclaration.toString());
 
         classDeclaration.getName().accept(this);
@@ -483,7 +517,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
 
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodDeclaration.toString());
    
         methodDeclaration.getName().accept(this); 
@@ -491,9 +525,6 @@ public class VisitorImpl implements Visitor {
         ArrayList<VarDeclaration> args = methodDeclaration.getArgs();
         for(int i = 0 ; i < args.size(); i++)
             args.get(i).accept(this);
-
-        //if(hasErrors== false && numPassedRounds == 2)
-        //    System.out.println(methodDeclaration.getReturnType().toString());
 
         // accept local variables
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
@@ -509,37 +540,30 @@ public class VisitorImpl implements Visitor {
         // finally accept return statement
         methodDeclaration.getReturnValue().accept(this);
 
-             /* 
-            if(numPassedRounds == 2){
-                if(!isSubType(t1, t2))
+             
+            if(numPassedRounds == 2 && hasErrors == false){
                 Type retValType =  methodDeclaration.getReturnValue().getType();
                 Type retType = methodDeclaration.getReturnType();
-
-                if(){
+                if(!isSubType(retValType, retType)){
                     hasErrors = true;
-                    int line = retval.getType();
-                    System.out.println(format("Line:%d:return type must be %s",line, retType.toString()));
+                    int line = retType.getLine();
+                    System.out.println(String.format("Line:%d:return type must be %s",line, retType.toString()));
                 }
-                
             }
-        */
-    }
+        }
 
     @Override
     public void visit(VarDeclaration varDeclaration) {
 
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(varDeclaration.toString());
 
         varDeclaration.getIdentifier().accept(this);
-
-        //if(hasErrors== false && numPassedRounds == 2)
-        //    System.out.println(varDeclaration.getType().toString());
     }
 
     @Override
     public void visit(ArrayCall arrayCall) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(arrayCall.toString());
 
         arrayCall.getInstance().accept(this);
@@ -550,7 +574,7 @@ public class VisitorImpl implements Visitor {
     public void visit(BinaryExpression binaryExpression) {
 
 
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(binaryExpression.toString());
         binaryExpression.getLeft().accept(this);
         binaryExpression.getRight().accept(this);
@@ -558,20 +582,20 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
     }
 
     @Override
     public void visit(Length length) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(length.toString());
         length.getExpression().accept(this);
     }
 
     @Override
     public void visit(MethodCall methodCall) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodCall.toString());
 
         methodCall.getInstance().accept(this);
@@ -585,7 +609,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(NewArray newArray) {
 
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(newArray.toString());
 
         if(newArray.Size() <= 0 && numPassedRounds == 1){          
@@ -599,7 +623,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(NewClass newClass) {
-        if(hasErrors== false && numPassedRounds == 2){
+        if(hasErrors== false && numPassedRounds == 3){
             System.out.println(newClass.toString());
             System.out.println(newClass.getClassName());
         }
@@ -612,7 +636,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(UnaryExpression unaryExpression) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(unaryExpression.toString());
         unaryExpression.getValue().accept(this);
         
@@ -620,19 +644,19 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(BooleanValue value) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(value.toString());
     }
 
     @Override
     public void visit(IntValue value) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(value.toString());
     }
 
     @Override
     public void visit(StringValue value) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(value.toString());
     }
 
@@ -640,13 +664,13 @@ public class VisitorImpl implements Visitor {
     public void visit(Assign assign) {
 
         if(assign.getrValue() == null){
-            if(hasErrors== false && numPassedRounds == 2)
+            if(hasErrors== false && numPassedRounds == 3)
                 System.out.println(assign.toString());  // not sure
             assign.getlValue().accept(this);
         }
 
         if(assign.getrValue() != null){
-                if(hasErrors== false && numPassedRounds == 2)
+                if(hasErrors== false && numPassedRounds == 3)
                     System.out.println(assign.toString());
                 assign.getlValue().accept(this);
                 assign.getrValue().accept(this); 
@@ -655,7 +679,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Block block) {
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(block.toString());
 
         ArrayList<Statement> bb = new ArrayList<> (block.getBody());
@@ -676,7 +700,7 @@ public class VisitorImpl implements Visitor {
                 }
             }
         */
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(conditional.toString());
 
         conditional.getExpression().accept(this);
@@ -703,7 +727,7 @@ public class VisitorImpl implements Visitor {
                     }
                 }
               */
-             if(hasErrors== false && numPassedRounds == 2)
+             if(hasErrors== false && numPassedRounds == 3)
                 System.out.println(loop.toString());
 
               loop.getCondition().accept(this);
@@ -723,7 +747,7 @@ public class VisitorImpl implements Visitor {
 
 
         */
-        if(hasErrors== false && numPassedRounds == 2)
+        if(hasErrors== false && numPassedRounds == 3)
             System.out.println(write.toString());
 
         write.getArg().accept(this); 
