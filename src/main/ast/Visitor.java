@@ -21,6 +21,7 @@ public interface Visitor {
     void visit(Identifier identifier);
     void visit(Length length);
     void visit(MethodCall methodCall);
+    void visit(MethodCallInMain methodCallInMain);
     void visit(NewArray newArray);
     void visit(NewClass newClass);
     void visit(This instance);

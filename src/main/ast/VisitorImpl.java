@@ -14,6 +14,9 @@ import java.lang.*;
 import symbolTable.*;
 import ast.Type.*;
 import ast.Type.UserDefinedType.*;
+import ast.Type.PrimitiveType.*;
+import ast.Type.NoType.*;
+import ast.Type.ArrayType.*;
 import java.util.*;
 
 public class VisitorImpl implements Visitor {
@@ -273,6 +276,31 @@ public class VisitorImpl implements Visitor {
     }
     /* phase 3 */
 
+    public int getBinaryOperatorType(BinaryOperator bo){
+        switch(bo){
+            case  add: return 1; 
+            case sub: return 1;
+            case mult: return 1;
+            case div: return 1;
+            case and: return 2;
+            case or:  return 2;
+            case eq:  return 3; 
+            case neq: return 3;
+            case lt: return 1;
+            case gt: return 1;
+            case assign: return 4;
+            default : return -1;
+        }
+    }
+
+    public int getUnaryOperatorType(UnaryOperator uo){
+        switch(uo){
+            case minus : return 1;
+            case not :  return 2;
+            default : return -1;
+        }
+    }
+
     public boolean isUserDefinedType(Type t){
         String typeName = t.toString();
         if(typeName.equals("int") || typeName.equals("string") || typeName.equals("int[]"))
@@ -500,10 +528,12 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(classDeclaration.toString());
 
-        classDeclaration.getName().accept(this);
-        if(classDeclaration.getParentName() != null)
-            classDeclaration.getParentName().accept(this);
-            
+        if(hasErrors== false && numPassedRounds == 3){
+            classDeclaration.getName().accept(this);
+            if(classDeclaration.getParentName() != null)
+                classDeclaration.getParentName().accept(this);
+        }
+    
         ArrayList<VarDeclaration> vards = new ArrayList<>(classDeclaration.getVarDeclarations());
         for (int i = 0; i < vards.size(); i++){
             vards.get(i).accept(this);
@@ -519,16 +549,54 @@ public class VisitorImpl implements Visitor {
 
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodDeclaration.toString());
-   
-        methodDeclaration.getName().accept(this); 
+
+        if(hasErrors == false && numPassedRounds == 3)
+            methodDeclaration.getName().accept(this); 
 
         ArrayList<VarDeclaration> args = methodDeclaration.getArgs();
-        for(int i = 0 ; i < args.size(); i++)
+        for(int i = 0 ; i < args.size(); i++){
+            if(numPassedRounds == 2){
+                String name = args.get(i).getIdentifier().getName();
+                Type type = args.get(i).getType();
+                try{
+                    putGlobalVar(name, type);
+                }
+                catch(ItemAlreadyExistsException e){
+
+                    String new_name = name + "Temporary_" + Integer.toString(index_variable);
+                    try{
+
+                        putGlobalVar(new_name, type);
+                    }catch(ItemAlreadyExistsException ee){
+                        System.out.println("oooooopppppsssss");
+                    }
+
+                }
+            }
             args.get(i).accept(this);
+        }
 
         // accept local variables
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
         for(int i = 0; i < localVars.size(); i++){
+            if(numPassedRounds == 2){
+                String name = localVars.get(i).getIdentifier().getName();
+                Type type = localVars.get(i).getType();
+                try{
+                    putGlobalVar(name, type);
+                }
+                catch(ItemAlreadyExistsException e){
+
+                    String new_name = name + "Temporary_" + Integer.toString(index_variable);
+                    try{
+
+                        putGlobalVar(new_name, type);
+                    }catch(ItemAlreadyExistsException ee){
+                        System.out.println("oooooopppppsssss");
+                    }
+
+                }
+            }
             localVars.get(i).accept(this);
         }
         // then accept body statements 
@@ -538,10 +606,10 @@ public class VisitorImpl implements Visitor {
         }
 
         // finally accept return statement
-        methodDeclaration.getReturnValue().accept(this);
+            methodDeclaration.getReturnValue().accept(this);
 
              
-            if(numPassedRounds == 2 && hasErrors == false){
+            if(numPassedRounds == 2){
                 Type retValType =  methodDeclaration.getReturnValue().getType();
                 Type retType = methodDeclaration.getReturnType();
                 if(!isSubType(retValType, retType)){
@@ -573,24 +641,105 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(BinaryExpression binaryExpression) {
 
-
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(binaryExpression.toString());
+  
         binaryExpression.getLeft().accept(this);
         binaryExpression.getRight().accept(this);
-    }
+
+        if(numPassedRounds == 2){
+            BinaryOperator bo = binaryExpression.getBinaryOperator();
+            if(getBinaryOperatorType(bo) == 1){
+            if(!(binaryExpression.getLeft().getType().toString().equals("int")  && 
+               binaryExpression.getLeft().getType().toString().equals("int"))){
+                hasErrors = true;
+                int line = binaryExpression.getLeft().getLine();
+                System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
+                binaryExpression.setType(new NoType());
+               }
+               else{
+                   binaryExpression.setType(new IntType());
+               }
+            } 
+            else if (getBinaryOperatorType(bo) == 2){
+                if(!(binaryExpression.getLeft().getType().toString().equals("bool")  && 
+               binaryExpression.getLeft().getType().toString().equals("bool"))){
+                   hasErrors = true;
+                   int line = binaryExpression.getLeft().getLine();
+                   System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
+                    binaryExpression.setType(new NoType());
+               }
+               else{
+                binaryExpression.setType(new BooleanType());
+                }
+            }
+
+            else if(getBinaryOperatorType(bo) == 3){
+                Type t1 = binaryExpression.getLeft().getType();
+                Type t2 = binaryExpression.getRight().getType();
+                if(!(isSubType(t1, t2) || isSubType(t2, t1))){
+                    hasErrors = true;
+                    int line = binaryExpression.getLine();
+                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
+                    binaryExpression.setType(new NoType());
+                }
+                else{
+                    binaryExpression.setType(new BooleanType());
+                }
+            }
+            else if(getBinaryOperatorType(bo) == 4){
+                if(!(binaryExpression.getLeft() instanceof Identifier)){
+                    hasErrors = true;
+                    int line = binaryExpression.getLine();
+                    System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
+                    binaryExpression.setType(new NoType());
+                }
+
+                binaryExpression.setType(new NoType()); // not sure ...
+
+            }
+               
+        }
+    } 
+
 
     @Override
     public void visit(Identifier identifier) {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
+        if(numPassedRounds == 2){
+            try{
+                SymbolTableVariableItemBase item = (SymbolTableVariableItemBase)SymbolTable.top.get(identifier.getName());
+                identifier.setType(item.getType());
+            }
+            catch(ItemNotFoundException e){
+                int line = identifier.getLine();
+                hasErrors = true;
+                System.out.println(String.format("Line:%d:variable %s is not declared", line, identifier.getName()));
+                identifier.setType(new NoType());
+            }
+        }
     }
 
     @Override
     public void visit(Length length) {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(length.toString());
+
         length.getExpression().accept(this);
+
+        if(numPassedRounds == 2){
+        if(!length.getExpression().getType().toString().equals("int[]")){
+            int line = length.getLine();
+            System.out.println(String.format("Line:%d:Unsupported type for length", line));
+            hasErrors = true;
+            length.setType(new NoType());
+        }
+        else{
+            length.setType(new IntType());
+        }
+    }
+
     }
 
     @Override
@@ -619,6 +768,9 @@ public class VisitorImpl implements Visitor {
             hasErrors = true;
         }
         newArray.getExpression().accept(this);
+        if(numPassedRounds == 2){
+            newArray.setType(new ArrayType());
+        }
     }
 
     @Override
@@ -638,7 +790,35 @@ public class VisitorImpl implements Visitor {
     public void visit(UnaryExpression unaryExpression) {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(unaryExpression.toString());
+
         unaryExpression.getValue().accept(this);
+        
+        if(numPassedRounds == 2){
+            UnaryOperator uo = unaryExpression.getUnaryOperator();
+            if(getUnaryOperatorType(uo) == 1){
+                if(!unaryExpression.getType().toString().equals("int")){
+                    hasErrors = true;
+                    int line = unaryExpression.getLine();
+                    System.out.println(String.format("Line:%d: Usupported operand type for %s", line, uo.toString()));
+                    unaryExpression.setType(new NoType());
+                }
+                else{
+                    unaryExpression.setType(new IntType());
+                }
+            }
+            else if(getUnaryOperatorType(uo) == 2){
+                if(!unaryExpression.getType().toString().equals("boolean")){
+                    hasErrors = true;
+                    int line = unaryExpression.getLine();
+                    System.out.println(String.format("Line:%d: Usupported operand type for %s", line, uo.toString()));
+                    unaryExpression.setType(new NoType());
+                }
+                else{
+                    unaryExpression.setType(new BooleanType());
+                }
+            }
+
+        }
         
     }
 
@@ -689,21 +869,21 @@ public class VisitorImpl implements Visitor {
     }
 
     @Override
-    public void visit(Conditional conditional) {
-        /* 
-            if(numPassedRounds == 2){
-                Expression cond = conditional.getExpression();
-                if(cond.getType().toString() != 'boolean'){
-                    hasErrors = true;
-                    int line = conditional.getLine();
-                    System.out.println(format("Line:%d:condition type must be boolean"));
-                }
-            }
-        */
+    public void visit(Conditional conditional) { 
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(conditional.toString());
 
         conditional.getExpression().accept(this);
+          
+        if(numPassedRounds == 2){
+            Expression cond = conditional.getExpression();
+            if(cond.getType().toString() != "bool"){
+                hasErrors = true;
+                int line = conditional.getLine();
+                System.out.println(String.format("Line:%d:condition type must be boolean", line));
+            }
+        }
+
         conditional.getConsequenceBody().accept(this);
 
         if(conditional.getAlternativeBody() != null )
@@ -716,40 +896,37 @@ public class VisitorImpl implements Visitor {
     }
 
     @Override
-    public void visit(While loop) {
-             /*
-                if(numPassedRounds == 2){
-                    Expression cond = loop.getCondition();
-                    if(!cond.getType().toString().equals('boolean')){
-                        hasErrors = true;
-                        int line = cond.getLine();
-                        System.out.println(format("Line:%d:condition type must be boolean"));
-                    }
-                }
-              */
+    public void visit(While loop) {       
              if(hasErrors== false && numPassedRounds == 3)
                 System.out.println(loop.toString());
 
               loop.getCondition().accept(this);
+              if(numPassedRounds == 2){
+                Expression cond = loop.getCondition();
+                if(!cond.getType().toString().equals("bool")){
+                    hasErrors = true;
+                    int line = cond.getLine();
+                    System.out.println(String.format("Line:%d:condition type must be boolean", line));
+                }
+            }
               loop.getBody().accept(this);
     }
 
     @Override
     public void visit(Write write) {
-        /* if(numPassedRound == 2){
-            Type write_type = write.getArg().getType();
-            if(!write_type.toString().equals('int') !write_type.toString().equals('int[]') !write_type.toString().equals('string')){
-                hasErrors = true;
-                int line = write.getLine();
-                System.out.println(format("Line %d:Unsupported type for writeln", line));
-            }
-        }
-
-
-        */
-        if(hasErrors== false && numPassedRounds == 3)
+          if(hasErrors== false && numPassedRounds == 3)
             System.out.println(write.toString());
 
         write.getArg().accept(this); 
+
+        if(numPassedRounds == 2){
+            Type write_type = write.getArg().getType();
+            String typeName = write_type.toString();
+            if(!(typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string"))){
+                hasErrors = true;
+                int line = write.getLine();
+                System.out.println(String.format("Line %d:Unsupported type for writeln", line));
+            }
+        }
     }
 }
