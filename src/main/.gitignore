@@ -1,0 +1,7 @@
+*.interp
+*.tokens
+SmoolaLexer*
+SmoolaListener*
+SmoolaBaseListener*
+SmoolaParser*
+
