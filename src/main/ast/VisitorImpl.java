@@ -336,6 +336,12 @@ public class VisitorImpl implements Visitor {
         return false;
     }
 
+    public boolean isBool(Type t){
+        if(t.toString().equals("bool") || t.toString().equals("noType"))
+            return true;
+        return false;
+
+    }
 
     public boolean isSubType(Type t1, Type t2){
         if(t1.toString().equals("noType"))
@@ -728,8 +734,8 @@ public class VisitorImpl implements Visitor {
                }
             } 
             else if (getBinaryOperatorType(bo) == 2){
-                if(!(binaryExpression.getLeft().getType().toString().equals("bool")  && 
-               binaryExpression.getLeft().getType().toString().equals("bool"))){
+                if(!(isBool(binaryExpression.getLeft().getType())  && 
+                    isBool(binaryExpression.getLeft().getType()))){
                    hasErrors = true;
                    int line = binaryExpression.getLeft().getLine();
                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
