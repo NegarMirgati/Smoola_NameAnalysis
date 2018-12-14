@@ -828,8 +828,11 @@ public class VisitorImpl implements Visitor {
             Type t = methodCall.getInstance().getType();
             String typeName = t.toString();
             if(!this.classSymTables.containsKey(typeName)){
+                if(!typeName.equals("noType")){
                 int line = methodCall.getLine();
                 System.out.println(String.format("Line:%d:class %s is not declared", line, typeName));
+                }
+                methodCall.setType(new NoType());
                 hasErrors = true;
             }
         }
@@ -837,16 +840,16 @@ public class VisitorImpl implements Visitor {
             methodCall.getMethodName().accept(this);
 
         if(numPassedRounds == 2){
-
             String methodname = methodCall.getMethodName().getName();
             String className = methodCall.getInstance().getType().toString();
-            HashMap<String, SymbolTableItem> classSymTable;
-            classSymTable = this.classSymTables.get(className);
-            if(!classSymTable.containsKey(methodname)){
-                int line = methodCall.getLine();
-                System.out.println(String.format("Line:%d:there is no method named %s in class %s", line, methodname, className));
-                hasErrors = true;
-                methodCall.setType(new NoType());
+            if(!className.equals("noType")){
+                HashMap<String, SymbolTableItem> classSymTable;
+                classSymTable = this.classSymTables.get(className);
+                if(!classSymTable.containsKey(methodname)){
+                    int line = methodCall.getLine();
+                    System.out.println(String.format("Line:%d:there is no method named %s in class %s", line, methodname, className));
+                    hasErrors = true;
+                    methodCall.setType(new NoType());
             }
             else{
                 SymbolTableMethodItem md = (SymbolTableMethodItem)(this.classSymTables.get(className).get(methodname));
@@ -873,6 +876,7 @@ public class VisitorImpl implements Visitor {
                 }
             }
         }
+    }
 
         ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
         for(int i = 0; i < args.size(); i++){
@@ -1000,11 +1004,11 @@ public class VisitorImpl implements Visitor {
         if(assign.getrValue() != null){
                 if(hasErrors== false && numPassedRounds == 3)
                     System.out.println(assign.toString());
+
                 assign.getlValue().accept(this);
                 assign.getrValue().accept(this); 
-            }
+            
             if(numPassedRounds == 2){
-            if(assign.getrValue() != null){
                 if(!(assign.getlValue() instanceof Identifier)){
                     hasErrors = true;
                     int line = assign.getlValue().getLine();
@@ -1017,7 +1021,6 @@ public class VisitorImpl implements Visitor {
                     int line = assign.getlValue().getLine();
                     System.out.println(String.format("Line:%d:incompatible types for =", line));
                 }
-
             }
         }
     }

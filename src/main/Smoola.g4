@@ -482,9 +482,10 @@ grammar Smoola;
                 newarr.setLine($ln.getLine());
                 $expr = newarr;
             }
-        |   'new ' name = ID '(' ')' {
+        |   tkn = 'new ' name = ID '(' ')' {
             Identifier id = new Identifier($name.text);
             $expr = new NewClass(id);
+            $expr.setLine($tkn.getLine());
             }
         |   'this' { $expr = new This();}
         |   constval = 'true' {
