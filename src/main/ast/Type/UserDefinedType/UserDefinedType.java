@@ -27,8 +27,6 @@ public class UserDefinedType extends Type {
 
     @Override
     public String toString() {
-        if(classDeclaration == null)
-            return null;
         return classDeclaration.getName().getName();
     }
 }

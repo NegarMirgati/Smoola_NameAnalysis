@@ -730,6 +730,7 @@ public class VisitorImpl implements Visitor {
                 }
             }
             else if(getBinaryOperatorType(bo) == 4){
+                System.out.println("here");
                 if(!(binaryExpression.getLeft() instanceof Identifier)){
                     hasErrors = true;
                     int line = binaryExpression.getLine();
@@ -970,6 +971,23 @@ public class VisitorImpl implements Visitor {
                 assign.getlValue().accept(this);
                 assign.getrValue().accept(this); 
             }
+            if(numPassedRounds == 2){
+            if(assign.getrValue() != null){
+                if(!(assign.getlValue() instanceof Identifier)){
+                    hasErrors = true;
+                    int line = assign.getlValue().getLine();
+                    System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
+                }
+                Type t1 = assign.getrValue().getType();
+                Type t2 = assign.getlValue().getType();
+                if(!isSubType(t1, t2)){
+                    hasErrors = true;
+                    int line = assign.getlValue().getLine();
+                    System.out.println(String.format("Line:%d:incompatible types for =", line));
+                }
+
+            }
+        }
     }
 
     @Override
