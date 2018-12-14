@@ -78,9 +78,9 @@ grammar Smoola;
                 mainMethodDec.addStatement($stms.multipleStatements.get(i));
 		    }
          }
-         tkn = 'return' retexp = expression{  
+         tkn = 'return' retexp = expression{ 
+            $retexp.expr.setLine($tkn.getLine()); 
             mainMethodDec.setReturnValue($retexp.expr);
-            mainMethodDec.getReturnValue().setLine($tkn.getLine());
             $main.addMethodDeclaration(mainMethodDec);
             $prog.setMainClass($main);
             }
