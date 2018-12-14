@@ -248,7 +248,7 @@ grammar Smoola;
             }
             else{
                 $expr = $lvalue.expr;
-                $expr.setLine($tkn.getLine());
+                //$expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -275,7 +275,7 @@ grammar Smoola;
             }
             else{
                 $expr = $expr1.expr;
-                $expr.setLine($tkn.getLine());
+                //$expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -302,7 +302,7 @@ grammar Smoola;
                 }
             else{
                 $expr = $expr1.expr;
-                $expr.setLine($tkn.getLine());
+                //$expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -329,7 +329,7 @@ grammar Smoola;
             }
             else{
                 $expr = $expr1.expr;
-                $expr.setLine($tkn.getLine());
+                //$expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -356,7 +356,7 @@ grammar Smoola;
             }
             else{
                 $expr = $expr1.expr;
-                $expr.setLine($tkn.getLine());
+                //$expr.setLine($tkn.getLine());
             }
 
             }
@@ -379,8 +379,10 @@ grammar Smoola;
             //int mult_line=$tkn.getLine();
             //$expr1.expr.setLine(mult_line);
             //$expr2.expr.setLine(mult_line);
-            if($expr2.expr != null)
+            if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr2.expr.setLine($tkn.getLine());
+            }
             else
                 $expr = $expr1.expr;
             }
