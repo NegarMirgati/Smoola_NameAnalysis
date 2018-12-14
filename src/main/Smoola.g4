@@ -35,12 +35,12 @@ grammar Smoola;
         ArrayList<ClassDeclaration> allClasses = new ArrayList<>(prog.getClasses());
         allClasses.add(prog.getMainClass());
         for(int i = 0; i < allClasses.size(); i++){
-            String s = "Identifier ";
             if(allClasses.get(i).getName().getName().equals(id.getName())){
                 return (allClasses.get(i));
             }
         }
-        return null;
+        ClassDeclaration cd = new ClassDeclaration(id, null);
+        return cd;
     }
     
 }
