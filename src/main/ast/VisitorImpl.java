@@ -55,7 +55,8 @@ public class VisitorImpl implements Visitor {
 
     public void checkVariableName(VarDeclaration varDeclaration, int parentLine){
         String name = varDeclaration.getIdentifier().getName();
-        Type type=varDeclaration.getType();
+        Type type = varDeclaration.getType();
+
         index_variable += 1;
         try {
                 putGlobalVar(name,type);
@@ -322,9 +323,10 @@ public class VisitorImpl implements Visitor {
 
     public boolean isUserDefinedType(Type t){
         String typeName = t.toString();
-        if(typeName.equals("int") || typeName.equals("string") || typeName.equals("int[]"))
+        if(typeName.equals("int") || typeName.equals("string") || typeName.equals("int[]") || typeName.equals("bool"))
+            return false;
+        else
             return true;
-        return false;
     }
 
     public boolean isSubType(Type t1, Type t2){
@@ -416,9 +418,32 @@ public class VisitorImpl implements Visitor {
 
         ArrayList<VarDeclaration> vards = cd.getVarDeclarations();
         for(int i = 0 ; i < vards.size(); i++){
+
             VarDeclaration varDeclaration = vards.get(i);
             String name = varDeclaration.getIdentifier().getName();
-            Type type=varDeclaration.getType();
+            Type temp_type = varDeclaration.getType();
+            String className = temp_type.toString();
+
+            if(((isUserDefinedType(temp_type)))){
+                if(!this.classSymTables.containsKey(temp_type.toString())){ // class which does no exists
+
+                    Type type = new NoType();
+                    varDeclaration.setType(type);
+                }
+            }
+
+            Type type = varDeclaration.getType();
+
+            if(isUserDefinedType(varDeclaration.getType())){
+                String typeName = varDeclaration.getType().toString();
+                if(!this.classSymTables.containsKey(typeName)){
+                    hasErrors = true;
+                    int line = varDeclaration.getLine(); 
+                    System.out.println(String.format("Line:%d:class %s is not declared", line, className));
+                    type = new NoType();
+                }
+            }
+
             try{
                 putGlobalVar(vards.get(i).getIdentifier().getName(), type);
             }catch(ItemAlreadyExistsException ee){
@@ -642,7 +667,6 @@ public class VisitorImpl implements Visitor {
 
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(varDeclaration.toString());
-
         varDeclaration.getIdentifier().accept(this);
     }
 
