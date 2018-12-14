@@ -140,20 +140,21 @@ public class VisitorImpl implements Visitor {
         }
     }
 
-    public void put_method(String name, ArrayList<VarDeclaration> argTypes)throws ItemAlreadyExistsException{
+    public void put_method(String name, ArrayList<VarDeclaration> argTypes, Type retType)throws ItemAlreadyExistsException{
         ArrayList<Type>types = new ArrayList<Type>();
         for(int i=0;i<argTypes.size(); i++){
             types.add(argTypes.get(i).getType());
         }
-        SymbolTable.top.put(new SymbolTableMethodItem(name,types));
+        SymbolTable.top.put(new SymbolTableMethodItem(name, types, retType));
     }
 
     public void checkMethodName(MethodDeclaration methodDeclaration, int parentLine){
         String methodname = methodDeclaration.getName().getName();
         ArrayList<VarDeclaration> argTypes = new ArrayList<>(methodDeclaration.getArgs());
         argTypes= methodDeclaration.getArgs();
+        Type retType = methodDeclaration.getReturnType();
         try{
-            put_method(methodname,argTypes);
+            put_method(methodname, argTypes, retType);
         }catch(ItemAlreadyExistsException e){
  
             hasErrors = true;
@@ -163,7 +164,7 @@ public class VisitorImpl implements Visitor {
             String new_name = methodname + "Temporary_" + Integer.toString(number_of_repeated_method);
             number_of_repeated_method+=1;
             try{
-            put_method(new_name,argTypes);
+            put_method(new_name, argTypes, retType);
             }
             catch(ItemAlreadyExistsException ee){}
         }  
@@ -428,8 +429,9 @@ public class VisitorImpl implements Visitor {
             MethodDeclaration md = mds.get(i);
             String name = md.getName().getName();
             ArrayList <VarDeclaration> args = md.getArgs();
+            Type retType = md.getReturnType();
             try{
-                put_method(name, args);
+                put_method(name, args, retType);
             }catch(ItemAlreadyExistsException ee){
                 System.out.println("OOOOOOOOOOPPPPSSSS");
             }
@@ -513,20 +515,21 @@ public class VisitorImpl implements Visitor {
                 String methodName = methodDecs.get(i).getName().getName();
                 ArrayList<Type> types = new ArrayList<Type>();
                 ArrayList<VarDeclaration> args = methodDecs.get(i).getArgs();
+                Type retType = methodDecs.get(i).getReturnType();
 
                 for(int j = 0; j < args.size(); j++){
                     types.add(args.get(j).getType());
                 }
 
                 try{
-                    SymbolTable.top.put(new SymbolTableMethodItem(methodName,types));
+                    SymbolTable.top.put(new SymbolTableMethodItem(methodName, types, retType));
 
                 }catch(ItemAlreadyExistsException e){
                     String new_name = methodName + "Temporary_" + Integer.toString(number_of_repeated_method);
                     number_of_repeated_method+=1;
                     try{
 
-                        SymbolTable.top.put(new SymbolTableMethodItem(new_name, types));
+                        SymbolTable.top.put(new SymbolTableMethodItem(new_name, types, retType));
                     }
                     catch(ItemAlreadyExistsException ee){
                         System.out.println("OOOOOOOOOPSSSSS!");
@@ -771,7 +774,56 @@ public class VisitorImpl implements Visitor {
             System.out.println(methodCall.toString());
 
         methodCall.getInstance().accept(this);
-        methodCall.getMethodName().accept(this);
+        if(numPassedRounds == 2){
+            Type t = methodCall.getInstance().getType();
+            String typeName = t.toString();
+            if(!this.classSymTables.containsKey(typeName)){
+                int line = methodCall.getLine();
+                System.out.println(String.format("Line:%d:class %s is not declared", line, typeName));
+                hasErrors = true;
+            }
+        }
+        if(numPassedRounds == 3)
+            methodCall.getMethodName().accept(this);
+
+        if(numPassedRounds == 2){
+
+            String methodname = methodCall.getMethodName().getName();
+            String className = methodCall.getInstance().getType().toString();
+            HashMap<String, SymbolTableItem> classSymTable;
+            classSymTable = this.classSymTables.get(className);
+            if(!classSymTable.containsKey(methodname)){
+                int line = methodCall.getLine();
+                System.out.println(String.format("Line:%d:there is no method named %s in class %s", line, methodname, className));
+                hasErrors = true;
+                methodCall.setType(new NoType());
+            }
+            else{
+                SymbolTableMethodItem md = (SymbolTableMethodItem)(this.classSymTables.get(className).get(methodname));
+                ArrayList<Type> methodTypes = md.getTypes();
+                ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
+                methodCall.setType(md.getReturnType());
+  
+
+                if(methodTypes.size() != args.size()){
+                    int line = methodCall.getLine();
+                    System.out.println(String.format("Line:%d:incorrect number of arguments for method %s", line, methodname));
+                    hasErrors = true;
+                }
+                for(int i = 0; i < args.size(); i++){
+                    if(i >= args.size() || i >= methodTypes.size())
+                        break;
+
+                    args.get(i).accept(this);
+                    if(!isSubType(args.get(i).getType(), methodTypes.get(i))){
+                        hasErrors = true;
+                        int line = methodCall.getLine();
+                        System.out.println(String.format("Line:%d:incompatible arguement types for aguemnet number %d", line, i));
+                    }
+                }
+            }
+        }
+
         ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
         for(int i = 0; i < args.size(); i++){
             args.get(i).accept(this);
@@ -801,6 +853,23 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 3){
             System.out.println(newClass.toString());
             System.out.println(newClass.getClassName());
+        }
+        if(numPassedRounds == 2){
+            Identifier nameid = newClass.getClassName();
+            String name = nameid.getName();
+            if(!this.classSymTables.containsKey(name)){
+                hasErrors = true;
+                int line = newClass.getLine();
+                System.out.println(String.format("Line:%d:class %s is not declared", line, name));
+                newClass.setType(new NoType());
+            }
+            else{
+                UserDefinedType u = new UserDefinedType();
+                ClassDeclaration cd = findClass(name, this.program);
+                u.setClassDeclaration(cd);
+                u.setName(nameid);
+                newClass.setType(u);
+            }
         }
     }
 
