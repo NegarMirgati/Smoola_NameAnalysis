@@ -224,6 +224,7 @@ grammar Smoola;
              BinaryOperator bo = BinaryOperator.assign;
              BinaryExpression be = new BinaryExpression($expr_lvalue.expr, $expr_rvalue.expr, bo);
              $expr = be;
+             $expr.setLine(equal_line);
          }
          | exp = expressionOr {$expr = $exp.expr; $rvalue = null; $lvalue = null;}
 	;
@@ -232,6 +233,7 @@ grammar Smoola;
 		lvalue = expressionAnd rvalue = expressionOrTemp{
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
             }
             else{
                 $expr = $lvalue.expr;
@@ -240,7 +242,7 @@ grammar Smoola;
 	;
 
     expressionOrTemp returns [Expression expr, BinaryOperator bo]:
-		tkn = '||'{$bo = BinaryOperator.or;} lvalue = expressionAnd rvalue = expressionOrTemp
+		tkn = '||' {$bo = BinaryOperator.or;} lvalue = expressionAnd rvalue = expressionOrTemp
         {   
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
@@ -248,7 +250,7 @@ grammar Smoola;
             }
             else{
                 $expr = $lvalue.expr;
-                //$expr.setLine($tkn.getLine());
+                $expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -275,7 +277,7 @@ grammar Smoola;
             }
             else{
                 $expr = $expr1.expr;
-                //$expr.setLine($tkn.getLine());
+                $expr.setLine($tkn.getLine());
             }
         }
 	    |
@@ -466,10 +468,12 @@ grammar Smoola;
                 IntType t = new IntType();
                 Expression temp_expr = new IntValue($num.int, t);
                 $expr = temp_expr;
+                $expr.setLine($num.getLine());
             }
         |	str = CONST_STR {
             StringType st = new StringType();
             $expr = new StringValue($str.text, st);
+            $expr.setLine($str.getLine());
         }
             
         | ln = 'new ' 'int' '[' num = CONST_NUM ']'
@@ -487,24 +491,28 @@ grammar Smoola;
             $expr = new NewClass(id);
             $expr.setLine($tkn.getLine());
             }
-        |   'this' { $expr = new This();}
+        |   tk = 'this' { $expr = new This(); $expr.setLine($tk.getLine());}
         |   constval = 'true' {
                                 BooleanType bt = new BooleanType(); 
                                 $expr = new BooleanValue(true, bt); 
+                                $expr.setLine($constval.getLine());
                              }
         |   constval = 'false'{ BooleanType bt = new BooleanType();
                                 $expr = new BooleanValue(false, bt);
+                                $expr.setLine($constval.getLine());
                                 }
         |	id = ID {$expr = new Identifier($id.text); $expr.setLine($id.getLine());}
-        |   id = ID '[' exp = expression ']' 
+        |   id = ID tt = '[' exp = expression ']' 
             {     
                 Identifier identifier = new Identifier($id.text);
                 $expr = new ArrayCall(identifier, $exp.expr);
+                $expr.setLine($tt.getLine());
             }
-        |	'(' thisexpr = expression ')' {
+        |	par = '(' thisexpr = expression ')' {
                 $lvalue = $thisexpr.lvalue;
                 $rvalue = $thisexpr.rvalue;
                 $expr = $thisexpr.expr;
+                $expr.setLine($par.getLine());
             }
 	;
 
