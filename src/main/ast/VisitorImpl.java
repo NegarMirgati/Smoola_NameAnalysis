@@ -1040,7 +1040,7 @@ public class VisitorImpl implements Visitor {
           
         if(numPassedRounds == 2){
             Expression cond = conditional.getExpression();
-            if(cond.getType().toString() != "bool"){
+            if(!isBool(cond.getType())){
                 hasErrors = true;
                 int line = conditional.getLine();
                 System.out.println(String.format("Line:%d:condition type must be boolean", line));
@@ -1066,7 +1066,7 @@ public class VisitorImpl implements Visitor {
               loop.getCondition().accept(this);
               if(numPassedRounds == 2){
                 Expression cond = loop.getCondition();
-                if(!cond.getType().toString().equals("bool")){
+                if(!isBool(cond.getType())){
                     hasErrors = true;
                     int line = cond.getLine();
                     System.out.println(String.format("Line:%d:condition type must be boolean", line));
@@ -1085,7 +1085,8 @@ public class VisitorImpl implements Visitor {
         if(numPassedRounds == 2){
             Type write_type = write.getArg().getType();
             String typeName = write_type.toString();
-            if(!(typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string"))){
+            if(!(typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string")
+                || typeName.equals("noType"))){
                 hasErrors = true;
                 int line = write.getLine();
                 System.out.println(String.format("Line %d:Unsupported type for writeln", line));
