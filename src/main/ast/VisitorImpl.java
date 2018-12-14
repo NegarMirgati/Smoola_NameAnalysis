@@ -737,7 +737,7 @@ public class VisitorImpl implements Visitor {
             } 
             else if (getBinaryOperatorType(bo) == 2){
                 if(!(isBool(binaryExpression.getLeft().getType())  && 
-                    isBool(binaryExpression.getLeft().getType()))){
+                    isBool(binaryExpression.getRight().getType()))){
                    hasErrors = true;
                    int line = binaryExpression.getLeft().getLine();
                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
