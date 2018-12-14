@@ -653,11 +653,12 @@ public class VisitorImpl implements Visitor {
 
         if(numPassedRounds == 2){
             Type retValType =  methodDeclaration.getReturnValue().getType();
+            Expression retval = methodDeclaration.getReturnValue();
             Type retType = methodDeclaration.getReturnType();
             Expression ret_value = methodDeclaration.getReturnValue();
             if(!isSubType(retValType, retType)){
                 hasErrors = true;
-                int line = retValType.getLine();
+                int line = retval.getLine();
                 System.out.println(String.format("Line:%d:return type must be %s", line, retType.toString()));
                 }
             }
