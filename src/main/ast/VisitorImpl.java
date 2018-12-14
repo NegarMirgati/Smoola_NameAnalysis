@@ -28,6 +28,8 @@ public class VisitorImpl implements Visitor {
     public int index_variable = 0;
     public int index_class = 0;
     public int index_keyword = 0;
+    private ClassDeclaration currentScope ; /* current class for phase 3 -> for setting this type */
+
     HashMap <String, HashMap<String, SymbolTableItem>> classSymTables;
 
     public Boolean IsKeyWord(String word)
@@ -380,6 +382,7 @@ public class VisitorImpl implements Visitor {
         if(numPassedRounds == 2 && hasErrors == false){
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
+                this.currentScope = classDecs.get(i);
                 String className = classDecs.get(i).getName().getName();
 
                 if(classDecs.get(i).getParentName() != null)
@@ -400,7 +403,6 @@ public class VisitorImpl implements Visitor {
     }
 
     public void checkInsideClassPhase3(ClassDeclaration cd){
-
         Identifier parentName = cd.getParentName();
         SymbolTable.top.push(new SymbolTable(SymbolTable.top));
         if(parentName != null)
@@ -437,7 +439,6 @@ public class VisitorImpl implements Visitor {
             }
         }
     }
-
 
     public void checkForParentClassErrors(ClassDeclaration cd){
 
@@ -591,12 +592,10 @@ public class VisitorImpl implements Visitor {
                     }catch(ItemAlreadyExistsException ee){
                         System.out.println("oooooopppppsssss");
                     }
-
                 }
             }
             args.get(i).accept(this);
         }
-
         // accept local variables
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
         for(int i = 0; i < localVars.size(); i++){
@@ -615,7 +614,6 @@ public class VisitorImpl implements Visitor {
                     }catch(ItemAlreadyExistsException ee){
                         System.out.println("oooooopppppsssss");
                     }
-
                 }
             }
             localVars.get(i).accept(this);
@@ -625,18 +623,16 @@ public class VisitorImpl implements Visitor {
         for (int i = 0; i < bodyStms.size(); i++){
             bodyStms.get(i).accept(this);
         }
-
         // finally accept return statement
-            methodDeclaration.getReturnValue().accept(this);
+        methodDeclaration.getReturnValue().accept(this);
 
-             
-            if(numPassedRounds == 2){
-                Type retValType =  methodDeclaration.getReturnValue().getType();
-                Type retType = methodDeclaration.getReturnType();
-                if(!isSubType(retValType, retType)){
-                    hasErrors = true;
-                    int line = retType.getLine();
-                    System.out.println(String.format("Line:%d:return type must be %s",line, retType.toString()));
+        if(numPassedRounds == 2){
+            Type retValType =  methodDeclaration.getReturnValue().getType();
+            Type retType = methodDeclaration.getReturnType();
+            if(!isSubType(retValType, retType)){
+                hasErrors = true;
+                int line = retType.getLine();
+                System.out.println(String.format("Line:%d:return type must be %s",line, retType.toString()));
                 }
             }
         }
@@ -715,14 +711,10 @@ public class VisitorImpl implements Visitor {
                     System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
                     binaryExpression.setType(new NoType());
                 }
-
-                binaryExpression.setType(new NoType()); // not sure ...
-
-            }
-               
+                binaryExpression.setType(new NoType()); // not sure ..
+            }      
         }
     } 
-
 
     @Override
     public void visit(Identifier identifier) {
@@ -875,7 +867,13 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(This instance) {
-        //TODO: implement appropriate visit functionality
+        if(numPassedRounds == 2){
+            UserDefinedType u = new UserDefinedType();
+            u.setClassDeclaration(this.currentScope);
+            Identifier name = this.currentScope.getName();
+            u.setName(name);
+            instance.setType(u);
+        }
     }
 
     @Override
