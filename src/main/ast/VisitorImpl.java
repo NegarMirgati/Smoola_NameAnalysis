@@ -656,8 +656,8 @@ public class VisitorImpl implements Visitor {
             Type retType = methodDeclaration.getReturnType();
             if(!isSubType(retValType, retType)){
                 hasErrors = true;
-                int line = retType.getLine();
-                System.out.println(String.format("Line:%d:return type must be %s",line, retType.toString()));
+                int line = retValType.getLine();
+                System.out.println(String.format("Line:%d:return type must be %s", line, retType.toString()));
                 }
             }
         }
