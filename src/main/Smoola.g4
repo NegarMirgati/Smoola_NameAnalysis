@@ -494,7 +494,7 @@ grammar Smoola;
         |   constval = 'false'{ BooleanType bt = new BooleanType();
                                 $expr = new BooleanValue(false, bt);
                                 }
-        |	id = ID {$expr = new Identifier($id.text);}
+        |	id = ID {$expr = new Identifier($id.text); $expr.setLine($id.getLine());}
         |   id = ID '[' exp = expression ']' 
             {     
                 Identifier identifier = new Identifier($id.text);

@@ -127,7 +127,7 @@ public class VisitorImpl implements Visitor {
         String name= classDeclaration.getName().getName();
         UserDefinedType class_type= new UserDefinedType();
         class_type.setClassDeclaration(classDeclaration);
-        index_class+=1;
+        index_class += 1;
 
         try{
             put_class(name, class_type);
@@ -157,6 +157,7 @@ public class VisitorImpl implements Visitor {
         ArrayList<VarDeclaration> argTypes = new ArrayList<>(methodDeclaration.getArgs());
         argTypes= methodDeclaration.getArgs();
         Type retType = methodDeclaration.getReturnType();
+        number_of_repeated_method += 1;
         try{
             put_method(methodname, argTypes, retType);
         }catch(ItemAlreadyExistsException e){
@@ -168,7 +169,7 @@ public class VisitorImpl implements Visitor {
             String new_name = methodname + "Temporary_" + Integer.toString(number_of_repeated_method);
             number_of_repeated_method+=1;
             try{
-            put_method(new_name, argTypes, retType);
+                put_method(new_name, argTypes, retType);
             }
             catch(ItemAlreadyExistsException ee){}
         }  
@@ -462,7 +463,6 @@ public class VisitorImpl implements Visitor {
                     type = new NoType();
                 }
             }
-
             try{
                 putGlobalVar(vards.get(i).getIdentifier().getName(), type);
             }catch(ItemAlreadyExistsException ee){
@@ -631,11 +631,12 @@ public class VisitorImpl implements Visitor {
             if(numPassedRounds == 2){
                 String name = args.get(i).getIdentifier().getName();
                 Type type = args.get(i).getType();
+                index_variable += 1;
                 try{
                     putGlobalVar(name, type);
                 }
                 catch(ItemAlreadyExistsException e){
-
+                    index_variable += 1;
                     String new_name = name + "Temporary_" + Integer.toString(index_variable);
                     try{
 
@@ -653,6 +654,7 @@ public class VisitorImpl implements Visitor {
             if(numPassedRounds == 2){
                 String name = localVars.get(i).getIdentifier().getName();
                 Type type = localVars.get(i).getType();
+                index_variable += 1;
                 try{
                     putGlobalVar(name, type);
                 }
