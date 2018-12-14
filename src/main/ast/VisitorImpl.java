@@ -29,6 +29,7 @@ public class VisitorImpl implements Visitor {
     public int index_class = 0;
     public int index_keyword = 0;
     private ClassDeclaration currentScope ; /* current class for phase 3 -> for setting this type */
+    private boolean isMainClass = false; /* for checking main method name */
 
     HashMap <String, HashMap<String, SymbolTableItem>> classSymTables;
 
@@ -329,6 +330,19 @@ public class VisitorImpl implements Visitor {
             return true;
     }
 
+    public boolean isInt(Type t){
+        if(t.toString().equals("int") || t.toString().equals("noType"))
+            return true;
+        return false;
+    }
+
+    public boolean isBool(Type t){
+        if(t.toString().equals("bool") || t.toString().equals("noType"))
+            return true;
+        return false;
+
+    }
+
     public boolean isSubType(Type t1, Type t2){
         if(t1.toString().equals("noType"))
             return true;
@@ -385,6 +399,11 @@ public class VisitorImpl implements Visitor {
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
                 this.currentScope = classDecs.get(i);
+                if(i == 0)
+                    this.isMainClass = true;
+                else
+                    this.isMainClass = false;
+
                 String className = classDecs.get(i).getName().getName();
 
                 if(classDecs.get(i).getParentName() != null)
@@ -597,6 +616,13 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodDeclaration.toString());
 
+        if(numPassedRounds == 2 && this.isMainClass){
+            if(!methodDeclaration.getName().getName().equals("main")){
+                int line = methodDeclaration.getLine();
+                System.out.println(String.format("Line:%d: Invalid name for main class function", line));
+                hasErrors = true;
+            }
+        }
         if(hasErrors == false && numPassedRounds == 3)
             methodDeclaration.getName().accept(this); 
 
@@ -653,12 +679,13 @@ public class VisitorImpl implements Visitor {
 
         if(numPassedRounds == 2){
             Type retValType =  methodDeclaration.getReturnValue().getType();
+            Expression retval = methodDeclaration.getReturnValue();
             Type retType = methodDeclaration.getReturnType();
             Expression ret_value = methodDeclaration.getReturnValue();
             if(!isSubType(retValType, retType)){
                 hasErrors = true;
-                int line = ret_value.getLine();
-                System.out.println(String.format("Line:%d:return type must be %s",line, retType.toString()));
+                int line = retval.getLine();
+                System.out.println(String.format("Line:%d:return type must be %s", line, retType.toString()));
                 }
             }
         }
@@ -676,6 +703,9 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(arrayCall.toString());
 
+        if(numPassedRounds == 2){
+            arrayCall.setType(new IntType());
+        }
         arrayCall.getInstance().accept(this);
         arrayCall.getIndex().accept(this);
     }
@@ -692,8 +722,8 @@ public class VisitorImpl implements Visitor {
         if(numPassedRounds == 2){
             BinaryOperator bo = binaryExpression.getBinaryOperator();
             if(getBinaryOperatorType(bo) == 1){
-            if(!(binaryExpression.getLeft().getType().toString().equals("int")  && 
-               binaryExpression.getLeft().getType().toString().equals("int"))){
+            if(!(isInt(binaryExpression.getLeft().getType())  && 
+              isInt(binaryExpression.getRight().getType()))){
                 hasErrors = true;
                 int line = binaryExpression.getLeft().getLine();
                 System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
@@ -704,8 +734,8 @@ public class VisitorImpl implements Visitor {
                }
             } 
             else if (getBinaryOperatorType(bo) == 2){
-                if(!(binaryExpression.getLeft().getType().toString().equals("bool")  && 
-               binaryExpression.getLeft().getType().toString().equals("bool"))){
+                if(!(isBool(binaryExpression.getLeft().getType())  && 
+                    isBool(binaryExpression.getLeft().getType()))){
                    hasErrors = true;
                    int line = binaryExpression.getLeft().getLine();
                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
