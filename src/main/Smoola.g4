@@ -80,7 +80,7 @@ grammar Smoola;
          }
          tkn = 'return' retexp = expression{  
             mainMethodDec.setReturnValue($retexp.expr);
-            mainMethodDec.setLine($tkn.getLine());
+            mainMethodDec.getReturnValue().setLine($tkn.getLine());
             $main.addMethodDeclaration(mainMethodDec);
             $prog.setMainClass($main);
             }
@@ -424,6 +424,7 @@ grammar Smoola;
             else if($instance.expr == null || $methodcall.methodcall != null){
                 $expr = $methodcall.methodcall;
             }
+            
         }
     
 	;
@@ -433,6 +434,7 @@ grammar Smoola;
                 Identifier id = new Identifier($methodname.text);
                 MethodCall new_inst = new MethodCall($instance, id);
                 int p_line=$point.getLine();
+                new_inst.setLine(p_line);
             }
         temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall; $methodcall.setLine(p_line);}
 
@@ -440,6 +442,7 @@ grammar Smoola;
                 Identifier id = new Identifier($methodname.text);
                 MethodCall tempm = new MethodCall($instance, id);
                 int p_line2=$point.getLine();
+                tempm.setLine(p_line2);
             }
             (arg = expression {tempm.addArg($arg.expr);} 
             (co=',' arg = expression {tempm.addArg($arg.expr);
@@ -449,7 +452,7 @@ grammar Smoola;
 
      | point='.' 'length' {Length new_inst = new Length($instance); } temp = expressionMethodsTemp[new_inst] {$methodcall = $temp.methodcall;
         int p_line=$point.getLine();
-        $methodcall.setLine(p_line);}
+        new_inst.setLine(p_line);}
      | {$methodcall = $instance;}
        
         
