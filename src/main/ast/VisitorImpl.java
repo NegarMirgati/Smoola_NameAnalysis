@@ -1037,7 +1037,7 @@ public class VisitorImpl implements Visitor {
                 assign.getrValue().accept(this); 
             
             if(numPassedRounds == 2){
-                if(!(assign.getlValue() instanceof Identifier)){
+                if(!(isLvalue(assign.getlValue()))){
                     hasErrors = true;
                     int line = assign.getlValue().getLine();
                     System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
@@ -1051,6 +1051,19 @@ public class VisitorImpl implements Visitor {
                 }
             }
         }
+    }
+
+    public boolean isLvalue(Expression lvalue){
+        boolean flag = true;
+        if(lvalue instanceof ArrayCall){
+            if(!((((ArrayCall)lvalue).getInstance()) instanceof Identifier)){
+                flag = false;
+            }
+        }
+        else if(!(lvalue instanceof Identifier)){
+            flag = false;
+        }
+        return flag;
     }
 
     @Override
