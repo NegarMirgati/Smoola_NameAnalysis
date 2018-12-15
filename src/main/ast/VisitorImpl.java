@@ -52,7 +52,7 @@ public class VisitorImpl implements Visitor {
 
     public void putGlobalVar(String name , Type type) throws ItemAlreadyExistsException{
   
-        SymbolTable.top.put( new SymbolTableVariableItem(genVarKey(name), type, index_variable));
+        SymbolTable.top.put(new SymbolTableVariableItem(genVarKey(name), type, index_variable));
     }
 
     public void checkVariableName(VarDeclaration varDeclaration, int parentLine){
@@ -73,7 +73,7 @@ public class VisitorImpl implements Visitor {
                 putGlobalVar(new_name, type);
             
             }catch(ItemAlreadyExistsException ee){
-                System.out.println("OOOOOOOOOOOOOOOOPS!");
+                System.out.println("An error has Occured");
             }
             }
     }
@@ -97,7 +97,7 @@ public class VisitorImpl implements Visitor {
                 putGlobalVar(new_name, type);
             
             }catch(ItemAlreadyExistsException ee){
-                System.out.println("OOOOOOOOOOOOOOOOPS!");
+                System.out.println("An error has Occured");
             }
             }
     }
@@ -115,7 +115,7 @@ public class VisitorImpl implements Visitor {
                 putGlobalVar(new_name, type);
             
             }catch(ItemAlreadyExistsException ee){
-                System.out.println("OOOOOOOOOOOOOOOOPS!");
+                System.out.println("An error has Occured");
             }
         }
     }
@@ -483,7 +483,7 @@ public class VisitorImpl implements Visitor {
                     SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(methodName), types, retType));
 
                 }catch(ItemAlreadyExistsException e){
-                        System.out.println("OOOOOOOOOPSSSSS!");
+                        System.out.println("An error has Occured");
                 }  
             } 
             if(cd.getParentName() == null)
@@ -538,7 +538,7 @@ public class VisitorImpl implements Visitor {
             try{
                 putGlobalVar(vards.get(i).getIdentifier().getName(), type);
             }catch(ItemAlreadyExistsException ee){
-                System.out.println("OOOOOOOOOOPPPPSSSS");
+                System.out.println("An error has Occured");
             }
         }
 
@@ -551,7 +551,7 @@ public class VisitorImpl implements Visitor {
             try{
                 put_method(name, args, retType);
             }catch(ItemAlreadyExistsException ee){
-                System.out.println("OOOOOOOOOOPPPPSSSS");
+                System.out.println("An error has Occured");
             }
         }
     }
@@ -621,7 +621,7 @@ public class VisitorImpl implements Visitor {
                         SymbolTable.top.put( new SymbolTableVariableItem(genVarKey(new_name), type, index_variable));
             
                         }catch(ItemAlreadyExistsException ee){
-                            System.out.println("OOOOOOOOOPPPPPPSSSS");
+                            System.out.println("An error has Occured");
                         }
                     }
                 }
@@ -648,7 +648,7 @@ public class VisitorImpl implements Visitor {
                         SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(new_name), types, retType));
                     }
                     catch(ItemAlreadyExistsException ee){
-                        System.out.println("OOOOOOOOOPSSSSS!");
+                        System.out.println("An error has Occured");
                     }
                 }  
             } 
@@ -684,6 +684,9 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
 
+        if(numPassedRounds == 2)
+            SymbolTable.top.push(new SymbolTable()); // phase 3
+
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodDeclaration.toString());
 
@@ -694,6 +697,7 @@ public class VisitorImpl implements Visitor {
                 hasErrors = true;
             }
         }
+
         if(hasErrors == false && numPassedRounds == 3)
             methodDeclaration.getName().accept(this); 
 
@@ -718,16 +722,19 @@ public class VisitorImpl implements Visitor {
                     index_variable += 1;
                     String new_name = name + "Temporary_" + Integer.toString(index_variable);
                     try{
-
+                        System.out.println("An error has Occured");
                         putGlobalVar(new_name, type);
                     }catch(ItemAlreadyExistsException ee){
-                        System.out.println("oooooopppppsssss");
+                        System.out.println("An error has Occured");
                     }
                 }
             }
             args.get(i).accept(this);
         }
         // accept local variables
+        if(numPassedRounds == 2)
+            SymbolTable.top.push(new SymbolTable(SymbolTable.top));
+
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
         for(int i = 0; i < localVars.size(); i++){
             if(numPassedRounds == 2){
@@ -741,10 +748,10 @@ public class VisitorImpl implements Visitor {
 
                     String new_name = name + "Temporary_" + Integer.toString(index_variable);
                     try{
-
+                        System.out.println("An error has Occured");
                         putGlobalVar(new_name, type);
                     }catch(ItemAlreadyExistsException ee){
-                        System.out.println("oooooopppppsssss");
+                        System.out.println("An error has Occured");
                     }
                 }
             }
@@ -769,6 +776,11 @@ public class VisitorImpl implements Visitor {
                 System.out.println(String.format("Line:%d:return type must be %s", line, retType.toString()));
                 }
             }
+            if(numPassedRounds == 2){
+                SymbolTable.top.pop();
+                SymbolTable.top.pop();
+            }
+
         }
 
     @Override
