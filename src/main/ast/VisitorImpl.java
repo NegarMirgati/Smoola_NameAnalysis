@@ -1063,7 +1063,7 @@ public class VisitorImpl implements Visitor {
         if(numPassedRounds == 2){
             UnaryOperator uo = unaryExpression.getUnaryOperator();
             if(getUnaryOperatorType(uo) == 1){
-                if(!unaryExpression.getType().toString().equals("int")){
+                if(!isInt(unaryExpression.getValue().getType())){
                     hasErrors = true;
                     int line = unaryExpression.getLine();
                     System.out.println(String.format("Line:%d: Usupported operand type for %s", line, uo.toString()));
@@ -1074,7 +1074,7 @@ public class VisitorImpl implements Visitor {
                 }
             }
             else if(getUnaryOperatorType(uo) == 2){
-                if(!unaryExpression.getType().toString().equals("boolean")){
+                if(!isBool(unaryExpression.getValue().getType())){
                     hasErrors = true;
                     int line = unaryExpression.getLine();
                     System.out.println(String.format("Line:%d: Usupported operand type for %s", line, uo.toString()));
