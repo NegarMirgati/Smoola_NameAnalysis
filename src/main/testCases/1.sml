@@ -19,15 +19,16 @@ class Book {
 			k = false;
 		else
 			k = "YES";
-		return -A && !V || (3+4-3*5);
+		return -A && !V  || (3+4-3*5);
 	}
 
 	def f(): string {
 		while ( i <> 9){
+			#then = 3;
 			writeln("hi");
 		}
-		main = 1;
-		i [main] = 12;
+		
+		i [1] = 12;
 		return (B||C) + (m*9) - 3;
 	}
 }
