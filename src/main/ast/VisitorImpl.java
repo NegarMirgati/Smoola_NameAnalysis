@@ -1147,6 +1147,9 @@ public class VisitorImpl implements Visitor {
                 flag = false;
             }
         }
+        else if(lvalue instanceof This){
+            flag = false;
+        }
         else if(!(lvalue instanceof Identifier)){
             flag = false;
         }
