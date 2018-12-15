@@ -341,7 +341,12 @@ public class VisitorImpl implements Visitor {
         if(t.toString().equals("bool") || t.toString().equals("noType"))
             return true;
         return false;
+    }
 
+    public boolean isArr(Type t){
+        if(t.toString().equals("int[]") || t.toString().equals("noType"))
+            return true;
+        return false;
     }
 
     public boolean isSubType(Type t1, Type t2){
@@ -705,11 +710,35 @@ public class VisitorImpl implements Visitor {
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(arrayCall.toString());
 
-        if(numPassedRounds == 2){
-            arrayCall.setType(new IntType());
-        }
         arrayCall.getInstance().accept(this);
+        if(numPassedRounds == 2){
+            Expression instance = arrayCall.getInstance();
+            Type instType = instance.getType();
+
+            if(!isArr(instType)){
+                int line = arrayCall.getLine();
+                hasErrors = true;
+                System.out.println(String.format("Line:%d:Invalid instance for arraycall", line));
+                arrayCall.setType(new NoType());
+            }
+            else{
+                arrayCall.setType(new NoType());
+            }
+        }
         arrayCall.getIndex().accept(this);
+        if(numPassedRounds == 2){
+            Expression index = arrayCall.getIndex();
+            Type t = index.getType();
+            if(!isInt(t)){
+                int line = arrayCall.getLine();
+                System.out.println(String.format("Line:%d:Invalid type for array index", line));
+                hasErrors = true;
+                arrayCall.setType(new NoType());
+            }
+            else
+                arrayCall.setType(new IntType());
+        }
+        
     }
 
     @Override
@@ -762,7 +791,6 @@ public class VisitorImpl implements Visitor {
                 }
             }
             else if(getBinaryOperatorType(bo) == 4){
-                System.out.println("here");
                 if(!(binaryExpression.getLeft() instanceof Identifier)){
                     hasErrors = true;
                     int line = binaryExpression.getLine();
