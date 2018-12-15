@@ -830,7 +830,7 @@ public class VisitorImpl implements Visitor {
             if(!(isInt(binaryExpression.getLeft().getType())  && 
               isInt(binaryExpression.getRight().getType()))){
                 hasErrors = true;
-                int line = binaryExpression.getLeft().getLine();
+                int line = binaryExpression.getLine();//getLeft
                 System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                 binaryExpression.setType(new NoType());
                }
@@ -842,7 +842,7 @@ public class VisitorImpl implements Visitor {
                 if(!(isBool(binaryExpression.getLeft().getType())  && 
                     isBool(binaryExpression.getRight().getType()))){
                    hasErrors = true;
-                   int line = binaryExpression.getLeft().getLine();
+                   int line = binaryExpression.getLine();//.getLeft()
                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                     binaryExpression.setType(new NoType());
                }
