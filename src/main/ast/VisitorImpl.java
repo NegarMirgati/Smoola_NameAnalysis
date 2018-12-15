@@ -417,16 +417,16 @@ public class VisitorImpl implements Visitor {
                     checkForCyclicClassErrors(classDecs.get(i));
                     checkInsideClassPhase3(classDecs.get(i));
             }
-            
+            numPassedRounds += 1;
         }
-        /*if(numPassedRounds == 3){ // final round : print ast if no errors found
+        if(numPassedRounds == 3 && hasErrors == false){ // final round : print ast if no errors found
             if(hasErrors == false)
                 System.out.println(program.toString());
             ArrayList<ClassDeclaration> allClasses =  getAllClassDeclarations(program);
             for(int i = 0; i < allClasses.size(); i++){
                 allClasses.get(i).accept(this);
             }
-        }*/
+        }
     }
 
     public void checkInsideClassPhase3(ClassDeclaration cd){
@@ -636,6 +636,14 @@ public class VisitorImpl implements Visitor {
             if(numPassedRounds == 2){
                 String name = args.get(i).getIdentifier().getName();
                 Type type = args.get(i).getType();
+                if(isUserDefinedType(type)){
+                    if(!this.classSymTables.containsKey(type.toString())){
+                        hasErrors = true;
+                        int line = methodDeclaration.getLine();
+                        System.out.println(String.format("Line:%d:class %s is not declared", line, type.toString()));
+                        type = new NoType();
+                    }
+                }
                 index_variable += 1;
                 try{
                     putGlobalVar(name, type);
@@ -791,7 +799,7 @@ public class VisitorImpl implements Visitor {
                 }
             }
             else if(getBinaryOperatorType(bo) == 4){
-                if(!(binaryExpression.getLeft() instanceof Identifier)){
+                if(!(isLvalue(binaryExpression.getLeft()))){
                     hasErrors = true;
                     int line = binaryExpression.getLine();
                     System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
@@ -899,7 +907,7 @@ public class VisitorImpl implements Visitor {
                     if(!isSubType(args.get(i).getType(), methodTypes.get(i))){
                         hasErrors = true;
                         int line = methodCall.getLine();
-                        System.out.println(String.format("Line:%d:incompatible arguement types for aguemnet number %d", line, i));
+                        System.out.println(String.format("Line:%d:incompatible arguement type for arguemnet number %d", line, i + 1));
                     }
                 }
             }
