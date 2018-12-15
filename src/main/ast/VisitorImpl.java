@@ -51,7 +51,8 @@ public class VisitorImpl implements Visitor {
     }
 
     public void putGlobalVar(String name , Type type) throws ItemAlreadyExistsException{
-        SymbolTable.top.put( new SymbolTableVariableItem(name,type,index_variable));
+  
+        SymbolTable.top.put( new SymbolTableVariableItem(genVarKey(name), type, index_variable));
     }
 
     public void checkVariableName(VarDeclaration varDeclaration, int parentLine){
@@ -120,7 +121,22 @@ public class VisitorImpl implements Visitor {
     }
 
     public void put_class(String name,Type type)throws ItemAlreadyExistsException{
-        SymbolTable.top.put( new SymbolTableClassItem(name,type,index_class));
+        SymbolTable.top.put( new SymbolTableClassItem(genClassKey(name), type, index_class));
+    }
+
+    public String genClassKey(String name){
+        String temp = "class_"; 
+        return temp.concat(name);
+    }
+
+    public String genVarKey(String name){
+        String temp = "var_"; 
+        return temp.concat(name);
+    }
+
+    public String genMethodKey(String name){
+        String temp = "method_"; 
+        return temp.concat(name);
     }
 
     public void checkClassNames(ClassDeclaration classDeclaration){
@@ -149,7 +165,7 @@ public class VisitorImpl implements Visitor {
         for(int i=0;i<argTypes.size(); i++){
             types.add(argTypes.get(i).getType());
         }
-        SymbolTable.top.put(new SymbolTableMethodItem(name, types, retType));
+        SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(name), types, retType));
     }
 
     public void checkMethodName(MethodDeclaration methodDeclaration, int parentLine){
@@ -394,7 +410,6 @@ public class VisitorImpl implements Visitor {
                 checkInsideClass(classDecs.get(i), program);
 
                 String className = classDecs.get(i).getName().getName();
-                this.classSymTables.put(className, SymbolTable.top.getItems());
                 SymbolTable.top.pop(); // class checking finished, pop it
             }
             numPassedRounds += 1;
@@ -402,6 +417,7 @@ public class VisitorImpl implements Visitor {
 
         }
         if(numPassedRounds == 2 && hasErrors == false){
+            fillHashMapOfClasses();
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
                 this.currentScope = classDecs.get(i);
@@ -427,6 +443,57 @@ public class VisitorImpl implements Visitor {
                 allClasses.get(i).accept(this);
             }
         }
+    }
+
+    public void fillHashMapOfClasses(){
+        ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(this.program);
+        for(int i = 0; i < classDecs.size(); i++){
+            ClassDeclaration cd = classDecs.get(i);
+            String name = cd.getName().getName();
+            HashMap<String, SymbolTableItem> value = getMapOfItems(name, cd);
+            this.classSymTables.put(cd.getName().getName(), value);
+        }
+    }
+
+    public HashMap<String, SymbolTableItem> getMapOfItems(String initialClassName, ClassDeclaration cd){
+        SymbolTable.top.push(new SymbolTable());
+        ArrayList <String> visitedClasses = new ArrayList<String> ();
+        while(true){
+            if(cd == null)
+                break;
+            String className = cd.getName().getName();
+            if(visitedClasses.contains(className)){
+                break;
+            }
+            else
+                visitedClasses.add(className);
+
+            ArrayList <MethodDeclaration> methodDecs = cd.getMethodDeclarations();
+            for(int i = 0; i < methodDecs.size(); i++){
+                String methodName = methodDecs.get(i).getName().getName();
+                ArrayList<Type> types = new ArrayList<Type>();
+                ArrayList<VarDeclaration> args = methodDecs.get(i).getArgs();
+                Type retType = methodDecs.get(i).getReturnType();
+
+                for(int j = 0; j < args.size(); j++){
+                    types.add(args.get(j).getType());
+                }
+
+                try{
+                    SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(methodName), types, retType));
+
+                }catch(ItemAlreadyExistsException e){
+                        System.out.println("OOOOOOOOOPSSSSS!");
+                }  
+            } 
+            if(cd.getParentName() == null)
+                break;
+            else
+                cd = findClass(cd.getParentName().getName(), this.program);
+         }
+         HashMap<String, SymbolTableItem> items = SymbolTable.top.getItems();
+         SymbolTable.top.pop();
+         return items;
     }
 
     public void checkInsideClassPhase3(ClassDeclaration cd){
@@ -490,14 +557,13 @@ public class VisitorImpl implements Visitor {
     }
 
     public void checkForParentClassErrors(ClassDeclaration cd){
-
         String parentName = cd.getParentName().getName();
             if(findParentSymbolTable(parentName) == null){
                 int line = cd.getLine();
                 System.out.println(String.format("Line:%d:Parent class does not exists", line));
                 hasErrors = true;
             }
-    }
+        }   
 
     public HashMap<String, SymbolTableItem> findParentSymbolTable(String parentName){
         HashMap<String, SymbolTableItem> s = this.classSymTables.get(parentName);
@@ -523,8 +589,8 @@ public class VisitorImpl implements Visitor {
                     if(cdInCycle == null)
                         return;
                 }
+            }
         }
-    }
 
      public void addDecsendantsSymTable(String initialClassName, ClassDeclaration cd){
         ArrayList <String> visitedClasses = new ArrayList<String> ();
@@ -547,18 +613,18 @@ public class VisitorImpl implements Visitor {
                 Type type = varDecs.get(i).getType();
                 index_variable += 1;
                 try{
-                    SymbolTable.top.put( new SymbolTableVariableItem(name, type, index_variable));
+                    SymbolTable.top.put( new SymbolTableVariableItem(genVarKey(name), type, index_variable));
                     
                 } catch(ItemAlreadyExistsException e){
                     String new_name = name + "Temporary_" + Integer.toString(index_variable);
                     try{
-                        SymbolTable.top.put( new SymbolTableVariableItem(new_name, type, index_variable));
+                        SymbolTable.top.put( new SymbolTableVariableItem(genVarKey(new_name), type, index_variable));
             
                         }catch(ItemAlreadyExistsException ee){
                             System.out.println("OOOOOOOOOPPPPPPSSSS");
                         }
+                    }
                 }
-            }
             ArrayList <MethodDeclaration> methodDecs = cd.getMethodDeclarations();
             for(int i = 0; i < methodDecs.size(); i++){
 
@@ -572,14 +638,14 @@ public class VisitorImpl implements Visitor {
                 }
 
                 try{
-                    SymbolTable.top.put(new SymbolTableMethodItem(methodName, types, retType));
+                    SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(methodName), types, retType));
 
                 }catch(ItemAlreadyExistsException e){
                     String new_name = methodName + "Temporary_" + Integer.toString(number_of_repeated_method);
                     number_of_repeated_method+=1;
                     try{
 
-                        SymbolTable.top.put(new SymbolTableMethodItem(new_name, types, retType));
+                        SymbolTable.top.put(new SymbolTableMethodItem(genMethodKey(new_name), types, retType));
                     }
                     catch(ItemAlreadyExistsException ee){
                         System.out.println("OOOOOOOOOPSSSSS!");
@@ -821,7 +887,7 @@ public class VisitorImpl implements Visitor {
             System.out.println(identifier.toString());
         if(numPassedRounds == 2){
             try{
-                SymbolTableVariableItemBase item = (SymbolTableVariableItemBase)SymbolTable.top.get(identifier.getName());
+                SymbolTableVariableItemBase item = (SymbolTableVariableItemBase)SymbolTable.top.get(genVarKey(identifier.getName()));
                 identifier.setType(item.getType());
             }
             catch(ItemNotFoundException e){
@@ -860,6 +926,7 @@ public class VisitorImpl implements Visitor {
             System.out.println(methodCall.toString());
 
         methodCall.getInstance().accept(this);
+
         if(numPassedRounds == 2){
             Type t = methodCall.getInstance().getType();
             String typeName = t.toString();
@@ -881,19 +948,18 @@ public class VisitorImpl implements Visitor {
             if(!className.equals("noType")){
                 HashMap<String, SymbolTableItem> classSymTable;
                 classSymTable = this.classSymTables.get(className);
-                if(!classSymTable.containsKey(methodname)){
+                if(!classSymTable.containsKey(genMethodKey(methodname))){ 
                     int line = methodCall.getLine();
                     System.out.println(String.format("Line:%d:there is no method named %s in class %s", line, methodname, className));
                     hasErrors = true;
                     methodCall.setType(new NoType());
             }
             else{
-                SymbolTableMethodItem md = (SymbolTableMethodItem)(this.classSymTables.get(className).get(methodname));
+                SymbolTableMethodItem md = (SymbolTableMethodItem)(this.classSymTables.get(className).get(genMethodKey(methodname)));
                 ArrayList<Type> methodTypes = md.getTypes();
                 ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
                 methodCall.setType(md.getReturnType());
   
-
                 if(methodTypes.size() != args.size()){
                     int line = methodCall.getLine();
                     System.out.println(String.format("Line:%d:incorrect number of arguments for method %s", line, methodname));
@@ -913,10 +979,11 @@ public class VisitorImpl implements Visitor {
             }
         }
     }
-
+    else{
         ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
-        for(int i = 0; i < args.size(); i++){
+            for(int i = 0; i < args.size(); i++){
             args.get(i).accept(this);
+            }
         }
     }
 
