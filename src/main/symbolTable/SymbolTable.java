@@ -56,6 +56,16 @@ public class SymbolTable {
 			return value;
 	}
 
+	public void updateItemInCurrentScope( String prevKey , SymbolTableItem newItem ) throws ItemNotFoundException{
+	SymbolTableItem value = items.get(prevKey);
+	if(value == null)
+		throw new ItemNotFoundException();
+	else {
+		items.remove( prevKey );
+		items.put(newItem.getKey(), newItem);
+		}
+	}
+
 	public SymbolTable getPreSymbolTable() {
 		return pre;
 	}

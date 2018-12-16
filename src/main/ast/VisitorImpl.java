@@ -375,7 +375,9 @@ public class VisitorImpl implements Visitor {
         else if(isUserDefinedType(t1) && isUserDefinedType(t2)){
             String t1ClassName = t1.toString();
             String t2ClassName = t2.toString();
-
+            if(t2ClassName.equals("Object")){
+                return true;
+            }
             ClassDeclaration c1 = findClass(t1ClassName, this.program);
             Identifier parentName = c1.getParentName();
             while(parentName != null){
@@ -419,6 +421,7 @@ public class VisitorImpl implements Visitor {
         }
         if(numPassedRounds == 2 && hasErrors == false){
             fillHashMapOfClasses();
+            putAllClassesOnTop();
             ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
             for(int i = 0; i < classDecs.size(); i++){
                 this.currentScope = classDecs.get(i);
@@ -446,14 +449,52 @@ public class VisitorImpl implements Visitor {
         }
     }
 
+    public void  putAllClassesOnTop(){
+        SymbolTable.top.push(new SymbolTable());
+        ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(program);
+        Identifier id = new Identifier("Object");
+        ClassDeclaration obj = new ClassDeclaration(id, null);
+        MethodDeclaration md = new MethodDeclaration(id);
+        md.setReturnType(new StringType());
+        obj.addMethodDeclaration(md);
+        UserDefinedType u = new UserDefinedType();
+        u.setClassDeclaration(obj);
+        try{
+        put_class("Object", u);
+        }
+        catch(ItemAlreadyExistsException e){
+            System.out.println("An error has occured");
+        }
+
+            for(int i = 0; i < classDecs.size(); i++){
+                try{
+                    ClassDeclaration cd = classDecs.get(i);
+                    UserDefinedType class_type= new UserDefinedType();
+                    class_type.setClassDeclaration(cd);
+                    put_class(cd.getName().getName(), class_type);
+
+                }catch(ItemAlreadyExistsException e){
+                    System.out.println("An error has occured");
+                }
+            }
+        }
+    
     public void fillHashMapOfClasses(){
         ArrayList<ClassDeclaration> classDecs = getAllClassDeclarations(this.program);
+        addObjectClassToHash();
         for(int i = 0; i < classDecs.size(); i++){
             ClassDeclaration cd = classDecs.get(i);
             String name = cd.getName().getName();
             HashMap<String, SymbolTableItem> value = getMapOfItems(name, cd);
             this.classSymTables.put(cd.getName().getName(), value);
         }
+    }
+
+    public void addObjectClassToHash(){
+        HashMap<String, SymbolTableItem> value = new HashMap<String, SymbolTableItem> ();
+        SymbolTableMethodItem item = new SymbolTableMethodItem("method_toString", new ArrayList<Type> (),new StringType());
+        value.put("method_toString", item);
+        this.classSymTables.put("Object", value);
     }
 
     public HashMap<String, SymbolTableItem> getMapOfItems(String initialClassName, ClassDeclaration cd){
@@ -503,7 +544,6 @@ public class VisitorImpl implements Visitor {
         if(parentName != null)
            addDecsendantsSymTable(cd.getName().getName(), findClass(parentName.getName(), this.program));
         addAllItemsPhase3(cd);
-        //printKeys();
         visit(cd);
         SymbolTable.top.pop();
     }
@@ -1165,9 +1205,14 @@ public class VisitorImpl implements Visitor {
                     int line = assign.getlValue().getLine();
                     System.out.println(String.format("Line:%d:incompatible types for =", line));
                 }
+                else{
+                    assign.getlValue().setType(assign.getrValue().getType());
+                    
+                }
             }
         }
     }
+    //public void updateInSymTable()
 
     public boolean isLvalue(Expression lvalue){
         boolean flag = true;

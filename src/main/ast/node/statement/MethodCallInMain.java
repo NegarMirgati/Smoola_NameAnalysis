@@ -41,6 +41,12 @@ public class MethodCallInMain extends Statement {
         this.args.add(arg);
     }
 
+    public void setArgs(ArrayList<Expression> _args){
+        for(int i = 0; i < _args.size(); i++){
+            this.args.add(_args.get(i));
+        }
+    }
+
     @Override
     public String toString() {
         return "MethodCallInMain";
