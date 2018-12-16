@@ -502,6 +502,7 @@ public class VisitorImpl implements Visitor {
         if(parentName != null)
            addDecsendantsSymTable(cd.getName().getName(), findClass(parentName.getName(), this.program));
         addAllItemsPhase3(cd);
+        //printKeys();
         visit(cd);
         SymbolTable.top.pop();
     }
@@ -681,12 +682,23 @@ public class VisitorImpl implements Visitor {
         }
     }
 
+    public void printKeys(){
+        HashMap<String, SymbolTableItem> map = SymbolTable.top.getItems();
+        System.out.println("begin scope");
+        for (String key : map.keySet()){
+            System.out.println(key);
+        }
+        System.out.println("endScope");
+    }
+
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
 
-        if(numPassedRounds == 2)
-            SymbolTable.top.push(new SymbolTable()); // phase 3
-
+        if(numPassedRounds == 2){
+            SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // phase 3
+            //printKeys();
+        }
+        
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(methodDeclaration.toString());
 
@@ -732,8 +744,10 @@ public class VisitorImpl implements Visitor {
             args.get(i).accept(this);
         }
         // accept local variables
-        if(numPassedRounds == 2)
+        if(numPassedRounds == 2){
+            //printKeys();
             SymbolTable.top.push(new SymbolTable(SymbolTable.top));
+        }
 
         ArrayList <VarDeclaration> localVars = new ArrayList<>(methodDeclaration.getLocalVars());
         for(int i = 0; i < localVars.size(); i++){
@@ -793,6 +807,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(ArrayCall arrayCall) {
+        boolean flag = false;
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(arrayCall.toString());
 
@@ -806,9 +821,10 @@ public class VisitorImpl implements Visitor {
                 hasErrors = true;
                 System.out.println(String.format("Line:%d:Invalid instance for arraycall", line));
                 arrayCall.setType(new NoType());
+                flag = true;
             }
             else{
-                arrayCall.setType(new NoType());
+                arrayCall.setType(new IntType());
             }
         }
         arrayCall.getIndex().accept(this);
@@ -821,7 +837,7 @@ public class VisitorImpl implements Visitor {
                 hasErrors = true;
                 arrayCall.setType(new NoType());
             }
-            else
+            else if(flag == false)
                 arrayCall.setType(new IntType());
         }
         
@@ -891,12 +907,10 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Identifier identifier) {
         int var_line = identifier.getLine();
-        //if(IsKeyWord(identifier.getName())){
-         //   System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
-           // hasErrors = true;
-       // }
+
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
+
         if(numPassedRounds == 2){
             try{
                 SymbolTableVariableItemBase item = (SymbolTableVariableItemBase)SymbolTable.top.get(genVarKey(identifier.getName()));
@@ -919,7 +933,7 @@ public class VisitorImpl implements Visitor {
         length.getExpression().accept(this);
 
         if(numPassedRounds == 2){
-        if(!length.getExpression().getType().toString().equals("int[]")){
+        if(!isArr(length.getExpression().getType())){
             int line = length.getLine();
             System.out.println(String.format("Line:%d:Unsupported type for length", line));
             hasErrors = true;
@@ -965,7 +979,11 @@ public class VisitorImpl implements Visitor {
                     System.out.println(String.format("Line:%d:there is no method named %s in class %s", line, methodname, className));
                     hasErrors = true;
                     methodCall.setType(new NoType());
-            }
+                    ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
+                    for(int i = 0; i < args.size(); i++){
+                        args.get(i).accept(this);
+                    }
+                }
             else{
                 SymbolTableMethodItem md = (SymbolTableMethodItem)(this.classSymTables.get(className).get(genMethodKey(methodname)));
                 ArrayList<Type> methodTypes = md.getTypes();
@@ -980,7 +998,6 @@ public class VisitorImpl implements Visitor {
                 for(int i = 0; i < args.size(); i++){
                     if(i >= args.size() || i >= methodTypes.size())
                         break;
-
                     args.get(i).accept(this);
                     if(!isSubType(args.get(i).getType(), methodTypes.get(i))){
                         hasErrors = true;
@@ -990,13 +1007,19 @@ public class VisitorImpl implements Visitor {
                 }
             }
         }
-    }
-    else{
-        ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
+        else{
+            ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
             for(int i = 0; i < args.size(); i++){
             args.get(i).accept(this);
             }
         }
+    }
+    else{
+        ArrayList<Expression> args = new ArrayList<> (methodCall.getArgs());
+        for(int i = 0; i < args.size(); i++){
+        args.get(i).accept(this);
+        }
+      }
     }
 
     @Override
@@ -1204,7 +1227,7 @@ public class VisitorImpl implements Visitor {
                 Expression cond = loop.getCondition();
                 if(!isBool(cond.getType())){
                     hasErrors = true;
-                    int line = cond.getLine();
+                    int line = loop.getLine();
                     System.out.println(String.format("Line:%d:condition type must be boolean", line));
                 }
             }

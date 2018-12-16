@@ -405,6 +405,7 @@ grammar Smoola;
 		instance = expressionMethods index = expressionMemTemp
         {if($index.expr != null){
              $expr = new ArrayCall($instance.expr, $index.expr);
+             $expr.setLine($index.expr.getLine());
             }
         else{
             $expr = $instance.expr;
