@@ -1205,10 +1205,6 @@ public class VisitorImpl implements Visitor {
                     int line = assign.getlValue().getLine();
                     System.out.println(String.format("Line:%d:incompatible types for =", line));
                 }
-                else{
-                    assign.getlValue().setType(assign.getrValue().getType());
-                    
-                }
             }
         }
     }
