@@ -192,7 +192,7 @@ grammar Smoola;
                                                     int line = $tkn.getLine();
                                                     $stm_write.setLine(line);} 
     ;
-    statementAssignment returns [Assign assign]:
+    statementAssignment returns [Statement assign]:
         expr = expression tkn = ';'
         {
             if($expr.lvalue != null && $expr.rvalue != null){
@@ -200,9 +200,15 @@ grammar Smoola;
                 $assign = new Assign($expr.lvalue, $expr.rvalue);
                 $assign.setLine($tkn.getLine());
             }
-            else if($expr.expr != null)
-                $assign = new Assign($expr.expr, null);
+            else if($expr.expr != null){
+                MethodCall md = (MethodCall)($expr.expr);
+                Identifier id = new Identifier(md.getMethodName().getName());
+                MethodCallInMain temp = new MethodCallInMain(md.getInstance(), id);
+                temp.setArgs(md.getArgs());
+                $assign = temp;
                 $assign.setLine($tkn.getLine());
+               
+            }
         }
     ;
 

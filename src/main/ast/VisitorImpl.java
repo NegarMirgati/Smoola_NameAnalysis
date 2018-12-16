@@ -30,6 +30,7 @@ public class VisitorImpl implements Visitor {
     public int index_keyword = 0;
     private ClassDeclaration currentScope ; /* current class for phase 3 -> for setting this type */
     private boolean isMainClass = false; /* for checking main method name */
+    private boolean isMainMethod = false;
 
     HashMap <String, HashMap<String, SymbolTableItem>> classSymTables;
 
@@ -696,7 +697,12 @@ public class VisitorImpl implements Visitor {
 
         if(numPassedRounds == 2){
             SymbolTable.top.push(new SymbolTable(SymbolTable.top)); // phase 3
-            //printKeys();
+            if(this.isMainClass){
+                this.isMainMethod = true;
+            }
+            else{
+                this.isMainMethod = false;
+            }
         }
         
         if(hasErrors== false && numPassedRounds == 3)
@@ -1214,7 +1220,18 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(MethodCallInMain methodCallInMain) {
-        //TODO: implement appropriate visit functionality
+        if(numPassedRounds == 2){
+        if(!this.isMainMethod){
+            int line = methodCallInMain.getLine();
+            System.out.println(String.format("Line:%d:invalid single-line methodCall", line));
+            hasErrors = true;
+        }
+        MethodCall md = new MethodCall(methodCallInMain.getInstance(), methodCallInMain.getMethodName());
+        md.setArgs(methodCallInMain.getArgs());
+        md.setLine(methodCallInMain.getLine());
+        visit(md);
+    }
+        
     }
 
     @Override
