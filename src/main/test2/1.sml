@@ -13,7 +13,7 @@ class Test {
 class Book {
 	var j : int [];
 	var k : boolean; 
-
+	#var class : int;
 	def main (f1: int, main: string) : int {
 		if (3||true) then
 			k = false;

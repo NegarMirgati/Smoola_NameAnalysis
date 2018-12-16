@@ -868,7 +868,7 @@ public class VisitorImpl implements Visitor {
                 Type t2 = binaryExpression.getRight().getType();
                 if(!(isSubType(t1, t2) || isSubType(t2, t1))){
                     hasErrors = true;
-                    int line = binaryExpression.getLine();
+                    int line = binaryExpression.getLeft().getLine();
                     System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                     binaryExpression.setType(new NoType());
                 }
@@ -891,10 +891,10 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Identifier identifier) {
         int var_line = identifier.getLine();
-        if(IsKeyWord(identifier.getName())){
-            System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
-            hasErrors = true;
-        }
+        //if(IsKeyWord(identifier.getName())){
+         //   System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
+           // hasErrors = true;
+       // }
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
         if(numPassedRounds == 2){
