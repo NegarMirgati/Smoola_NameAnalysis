@@ -891,10 +891,10 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Identifier identifier) {
         int var_line = identifier.getLine();
-        if(IsKeyWord(identifier.getName())){
-            System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
-            hasErrors = true;
-        }
+        //if(IsKeyWord(identifier.getName())){
+         //   System.out.println(String.format("Line:%d:%s is not valid a valid name", var_line, identifier.getName()));
+           // hasErrors = true;
+       // }
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(identifier.toString());
         if(numPassedRounds == 2){
