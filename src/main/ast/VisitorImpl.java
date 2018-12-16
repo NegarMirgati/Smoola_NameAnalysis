@@ -868,7 +868,7 @@ public class VisitorImpl implements Visitor {
                 Type t2 = binaryExpression.getRight().getType();
                 if(!(isSubType(t1, t2) || isSubType(t2, t1))){
                     hasErrors = true;
-                    int line = binaryExpression.getLine();
+                    int line = binaryExpression.getLeft().getLine();
                     System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                     binaryExpression.setType(new NoType());
                 }

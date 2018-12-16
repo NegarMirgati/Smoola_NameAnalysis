@@ -304,7 +304,7 @@ grammar Smoola;
                 }
             else{
                 $expr = $expr1.expr;
-                //$expr.setLine($tkn.getLine());
+                $expr.setLine($tkn.getLine());
             }
         }
 	    |
