@@ -1192,6 +1192,14 @@ public class VisitorImpl implements Visitor {
             assign.getlValue().accept(this);
         }
 
+            if(numPassedRounds == 2){
+                if(isMainMethod){
+                    int line = assign.getLine();
+                    System.out.println(String.format("Line:%d:invalid statement in main method", line));
+                    hasErrors = true;
+                }
+            }   
+
         if(assign.getrValue() != null){
                 if(hasErrors== false && numPassedRounds == 3)
                     System.out.println(assign.toString());

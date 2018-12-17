@@ -200,7 +200,7 @@ grammar Smoola;
                 $assign = new Assign($expr.lvalue, $expr.rvalue);
                 $assign.setLine($tkn.getLine());
             }
-            else if($expr.expr != null){
+            else if($expr.expr != null && $expr.expr instanceof MethodCall){
                 MethodCall md = (MethodCall)($expr.expr);
                 Identifier id = new Identifier(md.getMethodName().getName());
                 MethodCallInMain temp = new MethodCallInMain(md.getInstance(), id);
@@ -208,6 +208,10 @@ grammar Smoola;
                 $assign = temp;
                 $assign.setLine($tkn.getLine());
                
+            }
+            else if($expr.expr != null){
+                 $assign = new Assign($expr.expr, null);
+                 $assign.setLine($tkn.getLine());
             }
         }
     ;
