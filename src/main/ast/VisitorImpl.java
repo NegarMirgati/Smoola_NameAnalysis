@@ -1003,7 +1003,7 @@ public class VisitorImpl implements Visitor {
             Type t = methodCall.getInstance().getType();
             String typeName = t.toString();
             if(!this.classSymTables.containsKey(typeName)){
-                if(!typeName.equals("noType")){
+                if(!typeName.equals("noType") && isUserDefinedType(t)){
                 int line = methodCall.getLine();
                 System.out.println(String.format("Line:%d:class %s is not declared", line, typeName));
                 }
@@ -1011,13 +1011,14 @@ public class VisitorImpl implements Visitor {
                 hasErrors = true;
             }
         }
+
         if(numPassedRounds == 3)
             methodCall.getMethodName().accept(this);
 
         if(numPassedRounds == 2){
             String methodname = methodCall.getMethodName().getName();
             String className = methodCall.getInstance().getType().toString();
-            if(!className.equals("noType")){
+            if(!className.equals("noType") && isUserDefinedType(methodCall.getInstance().getType())){
                 HashMap<String, SymbolTableItem> classSymTable;
                 classSymTable = this.classSymTables.get(className);
                 if(!classSymTable.containsKey(genMethodKey(methodname))){ 
