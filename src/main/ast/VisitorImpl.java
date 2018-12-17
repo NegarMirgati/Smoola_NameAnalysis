@@ -602,7 +602,7 @@ public class VisitorImpl implements Visitor {
         String parentName = cd.getParentName().getName();
             if(findParentSymbolTable(parentName) == null){
                 int line = cd.getLine();
-                System.out.println(String.format("Line:%d:Parent class does not exists", line));
+                System.out.println(String.format("Line:%d:class %s is not declared", line, parentName));
                 hasErrors = true;
             }
         }   
@@ -767,7 +767,7 @@ public class VisitorImpl implements Visitor {
                 if(isUserDefinedType(type)){
                     if(!this.classSymTables.containsKey(type.toString())){
                         hasErrors = true;
-                        int line = methodDeclaration.getLine();
+                        int line = args.get(i).getLine();
                         System.out.println(String.format("Line:%d:class %s is not declared", line, type.toString()));
                         type = new NoType();
                     }
@@ -802,7 +802,7 @@ public class VisitorImpl implements Visitor {
                 if(isUserDefinedType(type)){
                     if(!this.classSymTables.containsKey(type.toString())){
                         hasErrors = true;
-                        int line = methodDeclaration.getLine();
+                        int line = localVars.get(i).getLine();
                         System.out.println(String.format("Line:%d:class %s is not declared", line, type.toString()));
                         type = new NoType();
                     }
@@ -908,7 +908,7 @@ public class VisitorImpl implements Visitor {
             if(!(isInt(binaryExpression.getLeft().getType())  && 
               isInt(binaryExpression.getRight().getType()))){
                 hasErrors = true;
-                int line = binaryExpression.getLine();//getLeft
+                int line = binaryExpression.getLine();
                 System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                 binaryExpression.setType(new NoType());
                }
@@ -920,7 +920,7 @@ public class VisitorImpl implements Visitor {
                 if(!(isBool(binaryExpression.getLeft().getType())  && 
                     isBool(binaryExpression.getRight().getType()))){
                    hasErrors = true;
-                   int line = binaryExpression.getLine();//.getLeft()
+                   int line = binaryExpression.getLine();
                    System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                     binaryExpression.setType(new NoType());
                }
@@ -934,7 +934,7 @@ public class VisitorImpl implements Visitor {
                 Type t2 = binaryExpression.getRight().getType();
                 if(!(isSubType(t1, t2) || isSubType(t2, t1))){
                     hasErrors = true;
-                    int line = binaryExpression.getLeft().getLine();
+                    int line = binaryExpression.getLine();
                     System.out.println(String.format("Line:%d:unsupported operand type for %s",line,bo.name()));
                     binaryExpression.setType(new NoType());
                 }
@@ -1123,6 +1123,9 @@ public class VisitorImpl implements Visitor {
             Identifier name = this.currentScope.getName();
             u.setName(name);
             instance.setType(u);
+        }
+        if(numPassedRounds == 3 && hasErrors == false){
+            System.out.println(instance.toString());
         }
     }
 
