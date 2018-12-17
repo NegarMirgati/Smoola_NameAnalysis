@@ -301,8 +301,7 @@ grammar Smoola;
 	;
 
     expressionEqTemp returns [Expression expr, BinaryOperator bo]:
-		(tkn = '=='{$bo = BinaryOperator.eq;} | tkn = '<>' {$bo = BinaryOperator.neq;}) 
-        expr1 = expressionCmp expr2 = expressionEqTemp 
+		tkn = '=='{$bo = BinaryOperator.eq;} expr1 = expressionCmp expr2 = expressionEqTemp 
         {   
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
@@ -313,6 +312,18 @@ grammar Smoola;
                 $expr.setLine($tkn.getLine());
             }
         }
+        | tkn = '<>' {$bo = BinaryOperator.neq;} expr1 = expressionCmp expr2 = expressionEqTemp 
+        {   
+            if($expr2.expr != null){
+                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn.getLine());
+                }
+            else{
+                $expr = $expr1.expr;
+                $expr.setLine($tkn.getLine());
+            }
+        }
+
 	    |
 	;
 
@@ -328,8 +339,7 @@ grammar Smoola;
 	;
 
     expressionCmpTemp returns [Expression expr, BinaryOperator bo]:
-		(tkn = '<' {$bo = BinaryOperator.lt;} | tkn = '>' {$bo = BinaryOperator.gt;}) 
-        expr1 = expressionAdd expr2 = expressionCmpTemp 
+		tkn = '<' {$bo = BinaryOperator.lt;} expr1 = expressionAdd expr2 = expressionCmpTemp 
         {
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
@@ -340,6 +350,18 @@ grammar Smoola;
                 //$expr.setLine($tkn.getLine());
             }
         }
+        | tkn = '>' {$bo = BinaryOperator.gt;} expr1 = expressionAdd expr2 = expressionCmpTemp 
+        {
+            if($expr2.expr != null){
+                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn.getLine());
+            }
+            else{
+                $expr = $expr1.expr;
+                //$expr.setLine($tkn.getLine());
+            }
+        }
+ 
 	    |
 	;
 
@@ -355,8 +377,19 @@ grammar Smoola;
 	;
 
     expressionAddTemp returns [Expression expr, BinaryOperator bo]:
-		(tkn = '+' { $bo = BinaryOperator.add; } | tkn = '-' { $bo = BinaryOperator.sub; } ) 
-        expr1 = expressionMult expr2 =  expressionAddTemp
+		tkn = '+' { $bo = BinaryOperator.add; } expr1 = expressionMult expr2 =  expressionAddTemp
+        {   
+            if($expr2.expr != null){
+                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn.getLine());
+            }
+            else{
+                $expr = $expr1.expr;
+                //$expr.setLine($tkn.getLine());
+            }
+
+            }
+        | tkn = '-' { $bo = BinaryOperator.sub;} expr1 = expressionMult expr2 =  expressionAddTemp
         {   
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
@@ -381,19 +414,25 @@ grammar Smoola;
 	;
 
     expressionMultTemp returns [Expression expr, BinaryOperator bo]:
-		(tkn = '*' {$bo = BinaryOperator.mult;} | tkn2 = '/' {$bo = BinaryOperator.div;} ) 
-        expr1 = expressionUnary expr2 = expressionMultTemp
+		tkn = '*' {$bo = BinaryOperator.mult;} expr1 = expressionUnary expr2 = expressionMultTemp
         {   
-            //int mult_line=$tkn.getLine();
-            //$expr1.expr.setLine(mult_line);
-            //$expr2.expr.setLine(mult_line);
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
-                $expr2.expr.setLine($tkn.getLine());
+                $expr.setLine($tkn.getLine());
             }
             else
                 $expr = $expr1.expr;
             }
+        | tkn2 = '/' {$bo = BinaryOperator.div;} expr1 = expressionUnary expr2 = expressionMultTemp
+        {   
+            if($expr2.expr != null){
+                $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
+                $expr.setLine($tkn2.getLine());
+            }
+            else
+                $expr = $expr1.expr;
+            }
+        
 	    |
 	;
 
