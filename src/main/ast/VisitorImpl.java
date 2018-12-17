@@ -791,7 +791,6 @@ public class VisitorImpl implements Visitor {
         }
         // accept local variables
         if(numPassedRounds == 2){
-            //printKeys();
             SymbolTable.top.push(new SymbolTable(SymbolTable.top));
         }
 
@@ -800,6 +799,14 @@ public class VisitorImpl implements Visitor {
             if(numPassedRounds == 2){
                 String name = localVars.get(i).getIdentifier().getName();
                 Type type = localVars.get(i).getType();
+                if(isUserDefinedType(type)){
+                    if(!this.classSymTables.containsKey(type.toString())){
+                        hasErrors = true;
+                        int line = methodDeclaration.getLine();
+                        System.out.println(String.format("Line:%d:class %s is not declared", line, type.toString()));
+                        type = new NoType();
+                    }
+                }
                 index_variable += 1;
                 try{
                     putGlobalVar(name, type);
@@ -840,12 +847,10 @@ public class VisitorImpl implements Visitor {
                 SymbolTable.top.pop();
                 SymbolTable.top.pop();
             }
-
         }
 
     @Override
     public void visit(VarDeclaration varDeclaration) {
-
         if(hasErrors== false && numPassedRounds == 3)
             System.out.println(varDeclaration.toString());
         varDeclaration.getIdentifier().accept(this);
@@ -886,7 +891,6 @@ public class VisitorImpl implements Visitor {
             else if(flag == false)
                 arrayCall.setType(new IntType());
         }
-        
     }
 
     @Override
@@ -945,7 +949,7 @@ public class VisitorImpl implements Visitor {
                     System.out.println(String.format("Line:%d:left side of assignment must be a valid lvaue",line));
                     binaryExpression.setType(new NoType());
                 }
-                binaryExpression.setType(new NoType()); // not sure ..
+              binaryExpression.setType(new NoType()); // not sure ..
             }      
         }
     } 
@@ -988,8 +992,7 @@ public class VisitorImpl implements Visitor {
         else{
             length.setType(new IntType());
         }
-    }
-
+      }
     }
 
     @Override
