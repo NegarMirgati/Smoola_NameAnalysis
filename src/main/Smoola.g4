@@ -267,6 +267,7 @@ grammar Smoola;
         {
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
         }
             else{
                 $expr = $lvalue.expr;
@@ -293,6 +294,7 @@ grammar Smoola;
 		lvalue = expressionCmp rvalue = expressionEqTemp {
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
         }
             else{
                 $expr = $lvalue.expr;
@@ -331,6 +333,7 @@ grammar Smoola;
 		lvalue = expressionAdd rvalue = expressionCmpTemp{
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
         }
             else{
                 $expr = $lvalue.expr;
@@ -369,6 +372,7 @@ grammar Smoola;
 		lvalue = expressionMult rvalue = expressionAddTemp{
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
         }
             else{
                 $expr = $lvalue.expr;
@@ -408,6 +412,7 @@ grammar Smoola;
 		lvalue = expressionUnary rvalue = expressionMultTemp{
             if($rvalue.expr != null){
                 $expr = new BinaryExpression($lvalue.expr, $rvalue.expr, $rvalue.bo);
+                $expr.setLine($rvalue.expr.getLine());
             }
             else{ $expr = $lvalue.expr;}
         }
@@ -418,19 +423,25 @@ grammar Smoola;
         {   
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
-                $expr.setLine($tkn.getLine());
+                $expr.setLine($expr2.expr.getLine());
+                
             }
             else
                 $expr = $expr1.expr;
+
+            $expr.setLine($tkn.getLine());
             }
         | tkn2 = '/' {$bo = BinaryOperator.div;} expr1 = expressionUnary expr2 = expressionMultTemp
         {   
             if($expr2.expr != null){
                 $expr = new BinaryExpression($expr1.expr, $expr2.expr, $expr2.bo);
-                $expr.setLine($tkn2.getLine());
+                $expr.setLine($expr2.expr.getLine());
+                
             }
             else
                 $expr = $expr1.expr;
+
+            $expr.setLine($tkn2.getLine());
             }
         
 	    |
@@ -538,14 +549,14 @@ grammar Smoola;
             $expr.setLine($tkn.getLine());
             }
         |   tk = 'this' { $expr = new This(); $expr.setLine($tk.getLine());}
-        |   constval = 'true' {
+        |   constval1 = 'true' {
                                 BooleanType bt = new BooleanType(); 
                                 $expr = new BooleanValue(true, bt); 
-                                $expr.setLine($constval.getLine());
+                                $expr.setLine($constval1.getLine());
                              }
-        |   constval = 'false'{ BooleanType bt = new BooleanType();
+        |   constval2 = 'false'{ BooleanType bt = new BooleanType();
                                 $expr = new BooleanValue(false, bt);
-                                $expr.setLine($constval.getLine());
+                                $expr.setLine($constval2.getLine());
                                 }
         |	id = ID {$expr = new Identifier($id.text); $expr.setLine($id.getLine());}
         |   id = ID tt = '[' exp = expression ']' 
